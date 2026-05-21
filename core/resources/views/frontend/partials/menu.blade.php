@@ -25,6 +25,12 @@ use Illuminate\Support\Str;
                     </a>
                 </li>
 
+                 <li class="nav-item">
+                    <a class="nav-link top-nav-link {{ request()->is('contact') ? 'active-link' : '' }}" href="/contact">
+                        <i class="bi bi-telephone me-1"></i> Contact
+                    </a>
+                </li>
+
                 @auth
                     @if(auth()->user()->is_admin == 1)
                         <li class="nav-item">
