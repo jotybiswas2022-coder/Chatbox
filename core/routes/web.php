@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\user\UserController;
-use App\Http\Controllers\user\ProfileController;
+use App\Http\Controllers\user\MessageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\SiteController;
 
@@ -16,16 +16,10 @@ Route::post('/contact', [UserController::class, 'contact'])->name('contact');
 Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 
-//Profile
-Route::middleware('auth')->prefix('/profile')->controller(ProfileController::class)->group(function () {
-    Route::get('/', 'index');               
-    Route::get('/edit',  'edit');
-    Route::post('/update', 'update');
-});
-
-//Donor List
-Route::middleware('auth')->prefix('/donor_list')->controller(SiteController::class)->group(function () {
-    Route::get('/{bloodGroup?}', 'donorList'); 
+//Message
+Route::middleware('auth')->prefix('/{user_id}/message')->controller(MessageController::class)->group(function () {
+    Route::get('/', 'message')->name('message');
+    Route::post('/send', 'sendMessage')->name('message.send');
 });
 
 

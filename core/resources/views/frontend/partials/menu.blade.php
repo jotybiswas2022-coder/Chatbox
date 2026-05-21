@@ -1,22 +1,22 @@
 @php
 use Illuminate\Support\Str;
+
+$activeUserId = request()->route('user_id') !== null ? (string) request()->route('user_id') : null;
+$isChatPage = request()->routeIs('message');
 @endphp
 
 <!-- Top Bar -->
 <nav class="navbar navbar-expand-lg shadow-sm py-2" style="background: #ffffff;">
     <div class="container-fluid">
-        <!-- Brand -->
         <a class="navbar-brand d-flex align-items-center fw-bold fs-5 text-dark" href="/" style="padding-left: 12px;">
-            <i class="bi bi-speedometer2 me-2 fs-3 text-primary"></i>
+            <i class="bi bi-chat-dots-fill me-2 fs-3 text-primary"></i>
             <span style="margin-left: 4px;">ChatBox</span>
         </a>
 
-        <!-- Toggler -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTopNav">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Top Nav Links -->
         <div class="collapse navbar-collapse" id="navbarTopNav">
             <ul class="navbar-nav ms-auto gap-3 align-items-center">
                 <li class="nav-item">
@@ -25,13 +25,19 @@ use Illuminate\Support\Str;
                     </a>
                 </li>
 
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link top-nav-link {{ request()->is('contact') ? 'active-link' : '' }}" href="/contact">
                         <i class="bi bi-telephone me-1"></i> Contact
                     </a>
                 </li>
 
                 @auth
+                    <li class="nav-item">
+                        <a class="nav-link top-nav-link {{ $isChatPage ? 'active-link' : '' }}" href="{{ route('message', auth()->id()) }}">
+                            <i class="bi bi-chat-left-text me-1"></i> Messages
+                        </a>
+                    </li>
+
                     @if(auth()->user()->is_admin == 1)
                         <li class="nav-item">
                             <a class="nav-link top-nav-link {{ Str::startsWith(request()->path(), 'admin') ? 'active-link' : '' }}" href="/admin">
@@ -39,6 +45,7 @@ use Illuminate\Support\Str;
                             </a>
                         </li>
                     @endif
+
                     <li class="nav-item">
                         <form action="{{ route('logout') }}" method="POST" class="d-inline">
                             @csrf
@@ -65,24 +72,24 @@ use Illuminate\Support\Str;
 </nav>
 
 <!-- Sidebar + Content -->
-<div class="row m-0" style="min-height: 100vh;">
-    <!-- Sidebar -->
+<div class="row m-0 app-layout-row">
     <div class="col-md-3 p-0">
-    <div class="sidebar">
+        <div class="sidebar">
             <ul class="sidebar-menu">
                 @auth
+                    <li class="ps-3 text-muted sidebar-label">My Account</li>
                     <li>
-                        <a href="#" class="active">
+                        <a href="{{ route('message', auth()->id()) }}" class="{{ $activeUserId === (string) auth()->id() ? 'active' : '' }}">
                             <i class="bi bi-person-circle"></i>
-                            <span>{{ auth()->user()->name }}</span>
+                            <span>{{ auth()->user()->name }} (You)</span>
                         </a>
                     </li>
 
-                    <li class="mt-3 ps-3 text-muted" style="font-size:.85rem;">All Users</li>
-                    @php $users = \App\Models\User::orderBy('name')->get(); @endphp
+                    <li class="mt-3 ps-3 text-muted sidebar-label">All Users</li>
+                    @php $users = \App\Models\User::where('id', '!=', auth()->id())->orderBy('name')->get(); @endphp
                     @foreach($users as $user)
                         <li>
-                            <a href="#" class="{{ auth()->id() == $user->id ? 'active' : '' }}">
+                            <a href="{{ route('message', $user->id) }}" class="{{ $activeUserId === (string) $user->id ? 'active' : '' }}">
                                 <i class="bi bi-person"></i>
                                 <span>{{ $user->name }}</span>
                             </a>
@@ -90,60 +97,73 @@ use Illuminate\Support\Str;
                     @endforeach
                 @else
                     <li>
-                        <a href="#" class="active">
+                        <a href="{{ route('login') }}" class="active">
                             <i class="bi bi-person-circle"></i>
-                            <span>Guest</span>
+                            <span>Guest — Login to chat</span>
                         </a>
                     </li>
                 @endauth
             </ul>
+        </div>
+    </div>
+
+    <div class="col-md-9 {{ $isChatPage ? 'p-0 chat-content-col' : 'p-4' }}">
+        @yield('content')
     </div>
 </div>
 
-    <!-- Content -->
-    <div class="col-md-9 p-4">
 <style>
-/* Top navbar */
-.navbar .top-nav-link { 
-    font-weight:500; 
-    color:#343a40; 
-    transition: color .3s, transform .3s, border-bottom .3s; 
+.navbar .top-nav-link {
+    font-weight: 500;
+    color: #343a40;
+    transition: color .3s, transform .3s;
     position: relative;
 }
-.navbar .top-nav-link:hover { 
-    color:#6366f1; 
-    transform:translateY(-1px);
+.navbar .top-nav-link:hover {
+    color: #6366f1;
+    transform: translateY(-1px);
 }
 .navbar .top-nav-link.active-link::after {
-    content:""; 
-    display:block; 
-    height:2px; 
-    background:#6366f1; 
-    border-radius:1px;
-    position:absolute; 
-    bottom:0; 
-    left:0; 
-    width:100%;
+    content: "";
+    display: block;
+    height: 2px;
+    background: #6366f1;
+    border-radius: 1px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
 }
 
-/* Brand */
-.navbar-brand i { font-size:1.4rem; }
+.navbar-brand i { color: #6366f1 !important; }
 
-/* Signup button */
-.signup-btn { 
-    background: linear-gradient(135deg,#6366f1,#8b5cf6); 
-    transition: all 0.3s; 
+.signup-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    transition: all 0.3s;
 }
-.signup-btn:hover { opacity:.9; transform:translateY(-1px); }
+.signup-btn:hover {
+    opacity: .9;
+    transform: translateY(-1px);
+}
 
-/* Sidebar */
+.app-layout-row {
+    min-height: calc(100vh - 56px);
+}
+
 .sidebar {
     background: #fefefe;
-    min-height: 100vh;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+    min-height: 100%;
+    height: 100%;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
     padding-top: 20px;
     border-right: 1px solid #e3e6f0;
 }
+
+.sidebar-label {
+    font-size: .85rem;
+    margin-bottom: 4px;
+}
+
 .sidebar-menu {
     list-style: none;
     padding: 0;
@@ -160,22 +180,31 @@ use Illuminate\Support\Str;
     border-left: 4px solid transparent;
     border-radius: 6px;
     transition: all 0.25s ease;
+    text-decoration: none;
 }
 .sidebar-menu a i { font-size: 18px; }
 .sidebar-menu a:hover {
-    background: rgba(99,102,241,0.1);
+    background: rgba(99, 102, 241, 0.1);
     color: #6366f1;
     border-left: 4px solid #6366f1;
 }
 .sidebar-menu a.active {
-    background: rgba(99,102,241,0.15);
+    background: rgba(99, 102, 241, 0.15);
     color: #6366f1;
     border-left: 4px solid #6366f1;
 }
 
-/* Responsive tweaks */
+.chat-content-col {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: #f8f9fc;
+}
+
 @media (max-width: 768px) {
     .sidebar { min-height: auto; padding-top: 0; }
     .navbar-nav { text-align: center; }
+    .app-layout-row { min-height: auto; }
+    .chat-content-col { min-height: calc(100vh - 120px); }
 }
 </style>
