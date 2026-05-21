@@ -73,14 +73,6 @@ use Illuminate\Support\Str;
             </li>
 
             <li>
-                <a href="{{ url('/admin/donor_list') }}"
-                class="{{ request()->is('admin/donor_list') ? 'active' : '' }}">
-                    <i class="bi bi-people-fill"></i> 
-                    <span>Donor List</span>
-                </a>
-            </li>
-
-            <li>
                 <a href="{{ url('/admin/contact') }}"
                 class="{{ request()->is('admin/contact') ? 'active' : '' }}">
                     <i class="bi bi-envelope-fill"></i> 

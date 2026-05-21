@@ -76,6 +76,16 @@ $isChatPage = request()->routeIs('message');
     <div class="col-md-3 p-0">
         <div class="sidebar">
             <ul class="sidebar-menu">
+                <!-- 🔍 Live Search Box (visible to all users) -->
+                <li class="px-3 mb-2 position-relative search-li">
+                    <div class="search-box">
+                        <input type="text" id="userSearch" class="form-control" placeholder="Search by Gmail...">
+
+                        <!-- Result Box -->
+                        <div id="searchResult" class="search-result-box"></div>
+                    </div>
+                </li>
+
                 @auth
                     <li class="ps-3 text-muted sidebar-label">My Account</li>
                     <li>
@@ -85,10 +95,11 @@ $isChatPage = request()->routeIs('message');
                         </a>
                     </li>
 
+
                     <li class="mt-3 ps-3 text-muted sidebar-label">All Users</li>
                     @php $users = \App\Models\User::where('id', '!=', auth()->id())->orderBy('name')->get(); @endphp
                     @foreach($users as $user)
-                        <li>
+                        <li class="user-item" data-name="{{ strtolower($user->name) }}" data-email="{{ strtolower($user->email) }}">
                             <a href="{{ route('message', $user->id) }}" class="{{ $activeUserId === (string) $user->id ? 'active' : '' }}">
                                 <i class="bi bi-person"></i>
                                 <span>{{ $user->name }}</span>
@@ -148,12 +159,17 @@ $isChatPage = request()->routeIs('message');
 
 .app-layout-row {
     min-height: calc(100vh - 56px);
+    height: calc(100vh - 56px);
+    overflow: hidden;
 }
 
 .sidebar {
     background: #fefefe;
     min-height: 100%;
     height: 100%;
+    position: sticky;
+    top: 0;
+    overflow: hidden;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
     padding-top: 20px;
     border-right: 1px solid #e3e6f0;
@@ -198,6 +214,8 @@ $isChatPage = request()->routeIs('message');
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 56px);
+    height: 100%;
+    overflow: hidden;
     background: #f8f9fc;
 }
 
@@ -207,4 +225,75 @@ $isChatPage = request()->routeIs('message');
     .app-layout-row { min-height: auto; }
     .chat-content-col { min-height: calc(100vh - 120px); }
 }
+
+.search-result-box {
+    position: absolute;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 4px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 999;
+    display: none;
+}
+
+.search-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.search-item:hover {
+    background: #f1f1f1;
+}
+
+/* Ensure search input displays nicely inside sidebar menu */
+.sidebar-menu .search-li { list-style: none; }
+.sidebar-menu .search-box .form-control { width: 100%; }
+.sidebar-menu .search-li .search-result-box { left: 12px; right: 12px; width: calc(100% - 24px); }
 </style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const userSearch = document.getElementById('userSearch');
+    const searchResult = document.getElementById('searchResult');
+
+    if (!userSearch || !searchResult) return; // input or box not present (e.g. guest)
+
+    userSearch.addEventListener('input', function () {
+        const query = this.value.trim().toLowerCase();
+
+        const userItems = document.querySelectorAll('.sidebar-menu .user-item');
+        let anyVisible = false;
+
+        if (query.length < 1) {
+            userItems.forEach(i => i.style.display = '');
+            searchResult.style.display = 'none';
+            searchResult.innerHTML = '';
+            return;
+        }
+
+        userItems.forEach(item => {
+            const name = (item.dataset.name || '').toLowerCase();
+            const email = (item.dataset.email || '').toLowerCase();
+            if (name.includes(query) || email.includes(query)) {
+                item.style.display = '';
+                anyVisible = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        if (!anyVisible) {
+            searchResult.innerHTML = '<div class="search-item text-muted">No user found</div>';
+            searchResult.style.display = 'block';
+        } else {
+            searchResult.style.display = 'none';
+            searchResult.innerHTML = '';
+        }
+    });
+});
+</script>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Account;
 use App\Models\Contact;
-use App\Models\Profile;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -14,21 +14,21 @@ class DashboardController extends Controller
         // Fetch counts
         $accountsCount = Account::count();
         $contactsCount = Contact::count();
-        $donorsCount = Profile::count(); 
+        $usersCount = User::count(); 
 
         // Fetch recent data
         $contacts = Contact::latest()->take(5)->get(); 
-        $donors = Profile::latest()->take(10)->get(); // Recent 10 donors
+        $users = User::latest()->take(10)->get(); // Recent 10 users
         $account = Account::first(); // Admin account info
 
-        // Pass donorsCount to the view
+        // Pass usersCount to the view
         return view('backend.index', compact(
             'accountsCount',
             'contacts',
             'contactsCount',
-            'donors',
+            'users',
             'account',
-            'donorsCount' 
+            'usersCount' 
         ));
     }
 }

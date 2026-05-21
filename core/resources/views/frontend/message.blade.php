@@ -3,8 +3,6 @@
 @section('content')
 
 @php
-    use Illuminate\Support\Facades\Storage;
-
     $recipientInitial = strtoupper(substr($recipient->name ?? 'U', 0, 1));
     $senderInitial = strtoupper(substr(auth()->user()->name ?? 'Y', 0, 1));
     $isSelfChat = (int) auth()->id() === (int) $user_id;
@@ -55,7 +53,7 @@
                         @endif
 
                         @if($message->image_path)
-                            <img src="{{ Storage::url($message->image_path) }}" alt="Chat image" class="message-image">
+                            <img src="{{ route('media.show', ['path' => $message->image_path]) }}" alt="Chat image" class="message-image">
                         @endif
 
                         <span class="message-time">{{ $message->created_at->format('h:i A') }}</span>
@@ -74,25 +72,37 @@
             </div>
         @endif
 
+        @if($errors->any())
+            <div class="chat-alert error">{{ $errors->first() }}</div>
+        @endif
+
         <form class="chat-input-area" id="chatForm" action="{{ route('message.send', $user_id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             <input type="file" name="image" id="imageInput" accept="image/*" hidden>
 
-            <label for="imageInput" class="chat-attach-btn" title="Attach image">
-                <i class="bi bi-image"></i>
-            </label>
+            <div class="input-wrapper">
+                <div class="image-preview-bar" id="imagePreviewBar" style="display:none;">
+                    <span id="imageFileName"></span>
+                    <button type="button" class="remove-image-btn" id="removeImageBtn" title="Remove image">&times;</button>
+                </div>
+                <div class="input-row">
+                    <label for="imageInput" class="chat-attach-btn" title="Attach image">
+                        <i class="bi bi-image"></i>
+                    </label>
 
-            <textarea
-                name="message"
-                id="messageInput"
-                class="chat-text-input"
-                rows="1"
-                placeholder="{{ $isSelfChat ? 'Write your notes or reminders here.' : 'Write a message...' }}"
-            >{{ old('message') }}</textarea>
+                    <textarea
+                        name="message"
+                        id="messageInput"
+                        class="chat-text-input"
+                        rows="1"
+                        placeholder="{{ $isSelfChat ? 'Write your notes or reminders here.' : 'Write a message...' }}"
+                    >{{ old('message') }}</textarea>
 
-            <button type="submit" class="chat-send-btn" title="Send message">
-                <i class="bi bi-send-fill"></i>
-            </button>
+                    <button type="submit" class="chat-send-btn" title="Send message">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </div>
         </form>
 
     </div>
@@ -299,12 +309,66 @@
 
     .chat-input-area {
         display: flex;
-        align-items: center;
-        gap: 12px;
+        align-items: flex-end;
+        gap: 0;
         padding: 16px 20px;
         background: #ffffff;
         border-top: 1px solid #e5e7eb;
         flex-shrink: 0;
+    }
+
+    .input-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .input-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .image-preview-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 13px;
+        color: #4338ca;
+        margin-left: 0;
+    }
+
+    .image-preview-bar.error {
+        background: #fff5f5;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .image-preview-bar span {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .remove-image-btn {
+        background: none;
+        border: none;
+        color: #6366f1;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 2px;
+        flex-shrink: 0;
+    }
+
+    .remove-image-btn:hover {
+        color: #dc2626;
     }
 
     .chat-attach-btn,
@@ -346,5 +410,78 @@
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var imageInput = document.getElementById('imageInput');
+        var chatForm = document.getElementById('chatForm');
+        var imagePreviewBar = document.getElementById('imagePreviewBar');
+        var imageFileName = document.getElementById('imageFileName');
+        var removeImageBtn = document.getElementById('removeImageBtn');
+
+        var MAX_IMAGE_KB = 5120; // 5MB
+
+        if (imageInput) {
+            imageInput.addEventListener('change', function () {
+                if (imageInput.files && imageInput.files.length > 0) {
+                    var file = imageInput.files[0];
+                    var name = file.name;
+                    var sizeKB = Math.round(file.size / 1024);
+                    if (sizeKB > MAX_IMAGE_KB) {
+                        imageFileName.textContent = '⚠️ ' + name + ' (' + sizeKB + ' KB) — Max ' + MAX_IMAGE_KB + ' KB';
+                        imagePreviewBar.classList.add('error');
+                        imagePreviewBar.style.display = 'flex';
+                        document.querySelector('.chat-send-btn').disabled = true;
+                    } else {
+                        imageFileName.textContent = '📎 ' + name;
+                        imagePreviewBar.classList.remove('error');
+                        imagePreviewBar.style.display = 'flex';
+                        document.querySelector('.chat-send-btn').disabled = false;
+                    }
+                } else {
+                    imagePreviewBar.style.display = 'none';
+                    imageFileName.textContent = '';
+                    imagePreviewBar.classList.remove('error');
+                    document.querySelector('.chat-send-btn').disabled = false;
+                }
+            });
+        }
+
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', function () {
+                imageInput.value = '';
+                imagePreviewBar.style.display = 'none';
+                imageFileName.textContent = '';
+                imagePreviewBar.classList.remove('error');
+                document.querySelector('.chat-send-btn').disabled = false;
+            });
+        }
+
+        // Prevent form submit when preview bar indicates error
+        if (chatForm) {
+            chatForm.addEventListener('submit', function (e) {
+                if (imagePreviewBar && imagePreviewBar.classList.contains('error')) {
+                    e.preventDefault();
+                    alert('Attached image is too large. Maximum allowed size is 5MB.');
+                }
+            });
+        }
+
+        // Auto-resize textarea
+        var textarea = document.getElementById('messageInput');
+        if (textarea) {
+            textarea.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        }
+
+        // Scroll to bottom
+        var chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    });
+</script>
 
 @endsection

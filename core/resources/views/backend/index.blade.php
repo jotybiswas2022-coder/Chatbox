@@ -39,9 +39,9 @@
         </div>
         <div class="col-md-4 mb-3">
             <div class="card card-hover p-3 shadow-sm rounded-4 text-center">
-                <i class="bi bi-droplet fs-1 text-danger"></i>
-                <h3 class="mt-2">{{ $donorsCount }}</h3>
-                <p class="mb-0 fw-semibold">Total Donors</p>
+                <i class="bi bi-people fs-1 text-info"></i>
+                <h3 class="mt-2">{{ $usersCount }}</h3>
+                <p class="mb-0 fw-semibold">Total Users</p>
             </div>
         </div>
     </div>
