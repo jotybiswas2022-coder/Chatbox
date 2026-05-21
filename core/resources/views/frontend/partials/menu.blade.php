@@ -63,31 +63,34 @@ use Illuminate\Support\Str;
     <!-- Sidebar -->
     <div class="col-md-3 p-0">
     <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li>
-                <a href="{{ url('/admin/account') }}"
-                class="{{ request()->is('admin/account') ? 'active' : '' }}">
-                    <i class="bi bi-person-circle"></i>
-                    <span>Account</span>
-                </a>
-            </li>
+            <ul class="sidebar-menu">
+                @auth
+                    <li>
+                        <a href="#" class="active">
+                            <i class="bi bi-person-circle"></i>
+                            <span>{{ auth()->user()->name }}</span>
+                        </a>
+                    </li>
 
-            <li>
-                <a href="{{ url('/admin/donor_list') }}"
-                class="{{ request()->is('admin/donor_list') ? 'active' : '' }}">
-                    <i class="bi bi-people-fill"></i> 
-                    <span>Donor List</span>
-                </a>
-            </li>
-
-            <li>
-                <a href="{{ url('/admin/contact') }}"
-                class="{{ request()->is('admin/contact') ? 'active' : '' }}">
-                    <i class="bi bi-envelope-fill"></i> 
-                    <span>Contact</span>
-                </a>
-            </li>
-        </ul>
+                    <li class="mt-3 ps-3 text-muted" style="font-size:.85rem;">All Users</li>
+                    @php $users = \App\Models\User::orderBy('name')->get(); @endphp
+                    @foreach($users as $user)
+                        <li>
+                            <a href="#" class="{{ auth()->id() == $user->id ? 'active' : '' }}">
+                                <i class="bi bi-person"></i>
+                                <span>{{ $user->name }}</span>
+                            </a>
+                        </li>
+                    @endforeach
+                @else
+                    <li>
+                        <a href="#" class="active">
+                            <i class="bi bi-person-circle"></i>
+                            <span>Guest</span>
+                        </a>
+                    </li>
+                @endauth
+            </ul>
     </div>
 </div>
 
