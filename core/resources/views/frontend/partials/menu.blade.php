@@ -75,17 +75,14 @@ $isChatPage = request()->routeIs('message');
 <div class="row m-0 app-layout-row">
     <div class="col-md-3 p-0">
         <div class="sidebar">
+            <div class="sidebar-search px-3 mb-3">
+                <div class="search-box">
+                    <input type="text" id="userSearch" class="form-control" placeholder="Search by Gmail...">
+                    <div id="searchResult" class="search-result-box"></div>
+                </div>
+            </div>
+
             <ul class="sidebar-menu">
-                <!-- 🔍 Live Search Box (visible to all users) -->
-                <li class="px-3 mb-2 position-relative search-li">
-                    <div class="search-box">
-                        <input type="text" id="userSearch" class="form-control" placeholder="Search by Gmail...">
-
-                        <!-- Result Box -->
-                        <div id="searchResult" class="search-result-box"></div>
-                    </div>
-                </li>
-
                 @auth
                     <li class="ps-3 text-muted sidebar-label">My Account</li>
                     <li>
@@ -169,15 +166,11 @@ $isChatPage = request()->routeIs('message');
     height: 100%;
     position: sticky;
     top: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
     padding-top: 20px;
     border-right: 1px solid #e3e6f0;
-}
-
-.sidebar-label {
-    font-size: .85rem;
-    margin-bottom: 4px;
 }
 
 .sidebar-menu {
@@ -249,10 +242,23 @@ $isChatPage = request()->routeIs('message');
     background: #f1f1f1;
 }
 
-/* Ensure search input displays nicely inside sidebar menu */
-.sidebar-menu .search-li { list-style: none; }
-.sidebar-menu .search-box .form-control { width: 100%; }
-.sidebar-menu .search-li .search-result-box { left: 12px; right: 12px; width: calc(100% - 24px); }
+/* Ensure search input displays nicely inside sidebar */
+.sidebar-search {
+    position: relative;
+}
+.search-box {
+    position: relative;
+}
+.search-box .form-control {
+    width: 100%;
+}
+.search-result-box {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 999;
+}
 </style>
 
 
