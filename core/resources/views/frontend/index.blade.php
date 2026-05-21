@@ -108,7 +108,7 @@ $groups = [
             <div class="contact-grid">
                 <!-- Form -->
                 <div class="contact-form-wrapper fade-in">
-                    <form id="contactForm" action="{{ url('/contactus') }}" method="POST">
+                    <form id="contactForm" action="{{ route('contact') }}" method="POST">
                         @csrf
                         <div class="form-group">
                             <label>Your Name</label>
@@ -206,7 +206,7 @@ $groups = [
             // Prepare form data
             const formData = new FormData(form);
 
-            fetch("{{ url('/contactus') }}", {
+            fetch("{{ route('contact') }}", {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')

@@ -8,9 +8,10 @@ use App\Http\Controllers\SiteController;
 
 Route::controller(SiteController::class)->group(function () {
     Route::get('/', 'index');
+    Route::get('/contact', 'contact')->name('contact.page');
 });
 
-Route::post('/contactus', [UserController::class, 'contactus']);
+Route::post('/contact', [UserController::class, 'contact'])->name('contact');
 
 Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');

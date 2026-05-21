@@ -8,7 +8,7 @@ use App\Models\Contact;
 
 class UserController extends Controller
 {
-     public function contactus(Request $request)
+     public function contact(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
