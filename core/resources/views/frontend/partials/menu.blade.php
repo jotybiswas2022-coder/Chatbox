@@ -356,6 +356,10 @@ body {
     flex: 1;
     min-height: 0;
     height: calc(100vh - var(--chatbox-navbar-height));
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    width: 100%;
 }
 
 .chatbox-layout-landing {
@@ -369,13 +373,23 @@ body {
     overflow: visible;
 }
 
+.chatbox-layout-message {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
 /* Sidebar Styles */
 .chatbox-sidebar-container {
     background: #f9fafb;
     height: 100%;
-    border-right: 1px solid #e5e7eb;
+    border-right: none;
     overflow-y: auto;
     animation: chatbox-sidebar-slide-in 0.6s ease-out;
+}
+
+.chatbox-layout-message .col-md-3 .chatbox-sidebar-container {
+    border-right: 1px solid #e5e7eb;
 }
 
 @keyframes chatbox-sidebar-slide-in {
@@ -645,6 +659,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    flex: 1;
 }
 
 /* Message thread: lock page scroll; only the inbox list scrolls */
@@ -656,6 +671,21 @@ body.chatbox-message-active {
 
 body.chatbox-message-active {
     min-height: 0;
+}
+
+.chatbox-layout-message > .col-md-3 {
+    width: 25%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border-right: 1px solid #e5e7eb;
+}
+
+.chatbox-layout-message > .col-md-9 {
+    width: 75%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
 }
 
 .chatbox-layout-message {

@@ -337,19 +337,17 @@ document.addEventListener('DOMContentLoaded', function () {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: #FFFFFF;
             color: #1f2937;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .chatbox-page-wrapper {
-            flex: 1;
-            height: 100%;
-            min-height: 0;
-            max-height: 100%;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
             background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
             position: relative;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
         }
 
         .chatbox-page-wrapper::before {
@@ -358,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
             top: 0;
             left: 0;
             right: 0;
-            height: 300px;
+            height: 100px;
             background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
             z-index: 0;
         }
@@ -366,10 +364,9 @@ document.addEventListener('DOMContentLoaded', function () {
         .chatbox-main-container {
             flex: 1;
             min-height: 0;
-            max-width: 1000px;
             width: 100%;
-            margin: 0 auto;
-            padding: 12px 16px;
+            margin: 0;
+            padding: 0;
             position: relative;
             z-index: 1;
             display: flex;
@@ -382,10 +379,11 @@ document.addEventListener('DOMContentLoaded', function () {
             display: flex;
             flex-direction: column;
             background: #FFFFFF;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(37, 99, 235, 0.15);
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
             animation: chatboxSlideUp 0.6s ease-out;
+            margin: 12px 16px;
         }
 
         @keyframes chatboxSlideUp {
@@ -402,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .chatbox-top-header {
             flex-shrink: 0;
             background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
-            padding: 24px 28px;
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             gap: 16px;
@@ -433,15 +431,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-user-avatar-circle {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
             border: 3px solid rgba(255, 255, 255, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: #FFFFFF;
             flex-shrink: 0;
@@ -468,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-username-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: #FFFFFF;
             margin: 0 0 4px 0;
@@ -520,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
-            padding: 28px;
+            padding: 16px;
             background: #f9fafb;
             position: relative;
         }
@@ -925,15 +923,17 @@ document.addEventListener('DOMContentLoaded', function () {
         .chatbox-input-form-container {
             flex-shrink: 0;
             background: #FFFFFF;
-            padding: 20px 28px;
+            padding: 14px 18px;
             border-top: 1px solid #e5e7eb;
+            width: 100%;
         }
 
         .chatbox-input-wrapper-block {
             background: #f9fafb;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 2px solid #e5e7eb;
             transition: all 0.3s ease;
+            overflow: hidden;
         }
 
         .chatbox-input-wrapper-block:focus-within {
@@ -942,7 +942,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-image-preview-container {
-            padding: 12px 16px;
+            padding: 10px 12px;
             background: #eff6ff;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
@@ -989,15 +989,15 @@ document.addEventListener('DOMContentLoaded', function () {
         .chatbox-input-controls-row {
             display: flex;
             align-items: flex-end;
-            gap: 12px;
-            padding: 12px 16px;
+            gap: 8px;
+            padding: 0;
         }
 
         .chatbox-attach-file-label {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: #eff6ff;
-            border-radius: 12px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1008,11 +1008,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         .chatbox-attach-file-label:hover {
             background: #2563EB;
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .chatbox-attach-file-label i {
-            font-size: 20px;
+            font-size: 18px;
             color: #2563EB;
             transition: color 0.3s ease;
         }
@@ -1026,10 +1026,10 @@ document.addEventListener('DOMContentLoaded', function () {
             border: none;
             background: transparent;
             resize: none;
-            font-size: 15px;
+            font-size: 14px;
             font-family: inherit;
-            padding: 10px 0;
-            max-height: 120px;
+            padding: 8px 0;
+            max-height: 100px;
             overflow-y: auto;
             color: #1f2937;
         }
@@ -1043,11 +1043,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-send-message-button {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1057,8 +1057,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-send-message-button:hover {
-            transform: scale(1.05) rotate(15deg);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
         }
 
         .chatbox-send-message-button:active {
@@ -1066,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         .chatbox-send-message-button i {
-            font-size: 18px;
+            font-size: 16px;
             color: #FFFFFF;
         }
 
@@ -1106,29 +1106,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
         @media (max-width: 768px) {
             .chatbox-main-container {
-                padding: 10px;
+                padding: 0;
             }
 
             .chatbox-card-wrapper {
-                border-radius: 16px;
+                margin: 8px;
+                border-radius: 8px;
             }
 
             .chatbox-top-header {
-                padding: 20px;
+                padding: 14px;
             }
 
             .chatbox-user-avatar-circle {
-                width: 48px;
-                height: 48px;
-                font-size: 18px;
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
             }
 
             .chatbox-username-title {
-                font-size: 18px;
+                font-size: 16px;
             }
 
             .chatbox-messages-scroll-area {
-                padding: 20px;
+                padding: 12px;
             }
 
             .chatbox-bubble-content-wrapper {
@@ -1136,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             .chatbox-input-form-container {
-                padding: 16px 20px;
+                padding: 12px 14px;
             }
         }
 
@@ -1152,6 +1153,59 @@ document.addEventListener('DOMContentLoaded', function () {
 
         .chatbox-outgoing-row .chatbox-edited-label-text {
             color: rgba(255, 255, 255, 0.6);
+        }
+            @media (max-width: 600px) {
+            .chatbox-main-container {
+                padding: 0;
+            }
+            .chatbox-card-wrapper {
+                margin: 6px;
+                border-radius: 6px;
+            }
+            .chatbox-top-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px;
+                gap: 10px;
+            }
+            .chatbox-user-avatar-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.4);
+            }
+            .chatbox-username-title {
+                font-size: 14px;
+                margin-bottom: 2px;
+            }
+            .chatbox-online-status-text {
+                font-size: 11px;
+            }
+            .chatbox-message-row-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .chatbox-message-bubble-box {
+                max-width: 100%;
+                padding: 8px 12px;
+            }
+            .chatbox-input-form-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 10px 12px;
+            }
+            .chatbox-message-textarea-field {
+                width: 100%;
+                font-size: 13px;
+                padding: 6px 0;
+            }
+            .chatbox-send-message-button {
+                align-self: flex-end;
+            }
+            .chatbox-messages-scroll-area {
+                padding: 12px;
+            }
         }
     </style>
 
