@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
@@ -16,7 +17,6 @@ class MessageController extends Controller
             abort(404);
         }
 
-        // Resolve absolute path on the public disk and return a proper file response
         $fullPath = Storage::disk('public')->path($path);
         if (!file_exists($fullPath)) {
             abort(404);
@@ -28,50 +28,48 @@ class MessageController extends Controller
     public function message($user_id)
     {
         $recipient = User::findOrFail($user_id);
-        $senderId = auth()->id();
-
-        if ($senderId === (int) $user_id) {
-            $messages = Message::where('sender_id', $senderId)
-                ->where('recipient_id', $senderId)
-                ->orderBy('created_at')
-                ->get();
-        } else {
-            $messages = Message::where(function ($query) use ($senderId, $user_id) {
-                    $query->where('sender_id', $senderId)
-                        ->where('recipient_id', $user_id);
-                })
-                ->orWhere(function ($query) use ($senderId, $user_id) {
-                    $query->where('sender_id', $user_id)
-                        ->where('recipient_id', $senderId);
-                })
-                ->orderBy('created_at')
-                ->get();
-        }
-
-        $messages = $messages
-            ->filter(fn ($msg) => $msg->isVisibleTo((int) $senderId))
-            ->values();
+        $messages = $this->conversationMessages((int) $user_id);
 
         return view('frontend.message', compact('user_id', 'recipient', 'messages'));
+    }
+
+    public function fetchMessages(Request $request, $user_id)
+    {
+        User::findOrFail($user_id);
+
+        $afterId = max(0, (int) $request->query('after', 0));
+        $messages = $this->conversationMessages((int) $user_id)
+            ->filter(fn ($msg) => (int) $msg->id > $afterId)
+            ->values();
+
+        return response()->json([
+            'html' => $this->renderMessageRows($messages, (int) $user_id),
+            'last_id' => $messages->isNotEmpty()
+                ? (int) $messages->last()->id
+                : $afterId,
+        ]);
     }
 
     public function sendMessage(Request $request, $user_id)
     {
         User::findOrFail($user_id);
-        // If message came as an array (malformed), coerce to null so validation won't fail with "must be a string"
+
         if (is_array($request->input('message'))) {
             $request->merge(['message' => null]);
         }
 
-        // Validate: message may be null (when sending image only), but must be a string when present
         $request->validate([
             'message' => 'nullable|string|max:1000',
-            // increase max to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
         ]);
 
-        // Ensure at least one of message or image is present
         if (!$request->filled('message') && !$request->hasFile('image')) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Please provide a message or attach an image.',
+                ], 422);
+            }
+
             return back()->withErrors(['message' => 'Please provide a message or attach an image.']);
         }
 
@@ -79,12 +77,20 @@ class MessageController extends Controller
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             if (!$file->isValid()) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Uploaded image is not valid.'], 422);
+                }
+
                 return back()->with('error', 'Uploaded image is not valid.');
             }
 
             try {
                 $filePath = $file->store('messages', 'public');
             } catch (\Exception $e) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Failed to save image.'], 500);
+                }
+
                 return back()->with('error', 'Failed to save image.');
             }
         }
@@ -92,15 +98,24 @@ class MessageController extends Controller
         $messageText = $request->input('message');
         if ($messageText !== null) {
             $messageText = trim($messageText);
-            if ($messageText === '') $messageText = null;
+            if ($messageText === '') {
+                $messageText = null;
+            }
         }
 
-        Message::create([
+        $message = Message::create([
             'sender_id' => auth()->id(),
             'recipient_id' => $user_id,
             'message' => $messageText,
             'image_path' => $filePath,
         ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'html' => $this->renderMessageRows(collect([$message]), (int) $user_id),
+                'message_id' => (int) $message->id,
+            ]);
+        }
 
         return back()->with('success', 'Message sent successfully!');
     }
@@ -178,18 +193,68 @@ class MessageController extends Controller
             abort(403);
         }
 
-        // Add current user to deleted_for_recipients
-        $deletedFor = is_array($message->deleted_for_recipients) 
-            ? $message->deleted_for_recipients 
+        $deletedFor = is_array($message->deleted_for_recipients)
+            ? $message->deleted_for_recipients
             : [];
-        
+
         $deletedFor = array_map('intval', $deletedFor);
-        
-        if (!in_array((int)$currentUserId, $deletedFor, true)) {
-            $deletedFor[] = (int)$currentUserId;
+
+        if (!in_array((int) $currentUserId, $deletedFor, true)) {
+            $deletedFor[] = (int) $currentUserId;
             $message->update(['deleted_for_recipients' => $deletedFor]);
         }
 
         return back()->with('success', 'Message deleted for you!');
+    }
+
+    private function conversationMessages(int $user_id): Collection
+    {
+        $senderId = auth()->id();
+
+        if ($senderId === $user_id) {
+            $messages = Message::where('sender_id', $senderId)
+                ->where('recipient_id', $senderId)
+                ->orderBy('created_at')
+                ->get();
+        } else {
+            $messages = Message::where(function ($query) use ($senderId, $user_id) {
+                $query->where('sender_id', $senderId)
+                    ->where('recipient_id', $user_id);
+            })
+                ->orWhere(function ($query) use ($senderId, $user_id) {
+                    $query->where('sender_id', $user_id)
+                        ->where('recipient_id', $senderId);
+                })
+                ->orderBy('created_at')
+                ->get();
+        }
+
+        return $messages
+            ->filter(fn ($msg) => $msg->isVisibleTo((int) $senderId))
+            ->values();
+    }
+
+    private function renderMessageRows(Collection $messages, int $user_id): string
+    {
+        if ($messages->isEmpty()) {
+            return '';
+        }
+
+        $recipient = User::findOrFail($user_id);
+        $recipientInitial = strtoupper(substr($recipient->name ?? 'U', 0, 1));
+        $senderInitial = strtoupper(substr(auth()->user()->name ?? 'Y', 0, 1));
+
+        return $messages->map(function (Message $message) use (
+            $user_id,
+            $recipientInitial,
+            $senderInitial
+        ) {
+            return view('frontend.partials.message-row', [
+                'message' => $message,
+                'user_id' => $user_id,
+                'recipientInitial' => $recipientInitial,
+                'senderInitial' => $senderInitial,
+            ])->render();
+        })->implode('');
     }
 }

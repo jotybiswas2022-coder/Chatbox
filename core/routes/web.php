@@ -23,6 +23,7 @@ Route::middleware('auth')->get('/media/{path}', [MessageController::class, 'medi
 //Message
 Route::middleware('auth')->prefix('/{user_id}/message')->controller(MessageController::class)->group(function () {
     Route::get('/', 'message')->name('message');
+    Route::get('/fetch', 'fetchMessages')->name('message.fetch');
     Route::post('/send', 'sendMessage')->name('message.send');
     Route::put('/{message_id}/update', 'updateMessage')->name('message.update');
     Route::delete('/{message_id}/delete', 'deleteMessage')->name('message.destroy');

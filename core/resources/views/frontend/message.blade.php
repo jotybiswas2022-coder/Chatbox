@@ -8,608 +8,1131 @@
     $isSelfChat = (int) auth()->id() === (int) $user_id;
 @endphp
 
-<div class="chat-page">
-    <div class="chat-container">
+<div class="chatbox-page-wrapper">
+    <div class="chatbox-main-container">
+        <div class="chatbox-card-wrapper">
 
-        <div class="chat-header">
-            <div class="chat-user">
-                <div class="chat-avatar recipient">{{ $recipientInitial }}</div>
-                <div class="chat-user-info">
-                    <h5 class="chat-user-name">
+            <!-- Header -->
+            <div class="chatbox-top-header">
+                <div class="chatbox-user-avatar-circle chatbox-recipient-avatar">{{ $recipientInitial }}</div>
+                <div class="chatbox-user-details-block">
+                    <h5 class="chatbox-username-title">
                         {{ $recipient->name }}
                         @if($isSelfChat)
-                            <span class="chat-self-badge">(You)</span>
+                            <span class="chatbox-self-label-tag">(You)</span>
                         @endif
                     </h5>
-                    <span class="chat-status">
-                        <span class="status-dot"></span>
+                    <span class="chatbox-online-status-text">
+                        <span class="chatbox-status-indicator-dot"></span>
                         {{ $isSelfChat ? 'Saved messages' : 'Online' }}
                     </span>
                 </div>
             </div>
-        </div>
 
-        <div class="chat-messages" id="chatMessages">
-            @if($messages->isEmpty())
-                <div class="empty-chat">
-                    <div class="empty-chat-icon">
-                        <i class="bi bi-chat-left-text"></i>
-                    </div>
-                    <h4>No messages yet</h4>
-                    <p>Start the conversation by sending a message.</p>
-                </div>
-            @endif
+            <!-- Messages -->
+            <div class="chatbox-messages-scroll-area"
+                 id="chatboxMessagesArea"
+                 data-last-id="{{ $messages->last()?->id ?? 0 }}"
+                 data-fetch-url="{{ route('message.fetch', $user_id) }}">
 
-            @foreach($messages as $message)
-                    @php $isOutgoing = (int) $message->sender_id === auth()->id(); @endphp
-                    <div class="message-row {{ $isOutgoing ? 'outgoing' : 'incoming' }}">
-                        @if(!$isOutgoing)
-                            <div class="message-avatar">{{ $recipientInitial }}</div>
-                        @endif
-
-                            <div class="message-bubble {{ $message->image_path ? 'has-image' : '' }}" id="messageBubble-{{ $message->id }}">
-                            @if($message->deleted_at)
-                                <p class="message-text text-muted"><em>Unsent</em></p>
-                            @else
-                                @if($message->message)
-                                    <p class="message-text">{{ $message->message }}
-                                        @if($message->edited_at)
-                                            <small class="text-muted"> (Edited)</small>
-                                        @endif
-                                    </p>
-                                @endif
-
-                                @if($message->image_path)
-                                    <img src="{{ route('media.show', ['path' => $message->image_path]) }}" alt="Chat image" class="message-image">
-                                @endif
-                            @endif
-
-                            <span class="message-time">{{ $message->created_at->format('h:i A') }}</span>
-
-                            @if($isOutgoing)
-                                <div class="message-actions">
-                                    @if(!$message->deleted_at)
-                                        <button type="button" class="message-action-btn edit-btn" data-message-id="{{ $message->id }}">Edit</button>
-                                    @endif
-                                    <form method="POST" action="{{ route('message.destroy', [$user_id, $message->id]) }}" class="inline-form delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="message-action-btn delete-btn" onclick="return confirm('Are you sure you want to unsend this message?')">Unsend</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('message.delete-for-me', [$user_id, $message->id]) }}" class="inline-form delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="message-action-btn delete-btn">Delete for me</button>
-                                    </form>
-                                </div>
-
-                                @if(!$message->deleted_at)
-                                    <form method="POST" action="{{ route('message.update', [$user_id, $message->id]) }}" class="edit-message-form" id="editForm-{{ $message->id }}" style="display:none;">
-                                        @csrf
-                                        @method('PUT')
-                                        <textarea name="message" class="message-edit-input" rows="2" placeholder="Update your message...">{{ $message->message }}</textarea>
-                                        <div class="edit-form-buttons">
-                                            <button type="submit" class="message-action-btn save-btn">Save</button>
-                                            <button type="button" class="message-action-btn cancel-btn" data-message-id="{{ $message->id }}">Cancel</button>
-                                        </div>
-                                    </form>
-                                @endif
-                            @else
-                                <div class="message-actions">
-                                    <form method="POST" action="{{ route('message.delete-for-me', [$user_id, $message->id]) }}" class="inline-form delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="message-action-btn delete-btn">Delete for me</button>
-                                    </form>
-                                </div>
-                            @endif
+                @if($messages->isEmpty())
+                    <div class="chatbox-empty-state-container" id="chatboxEmptyState">
+                        <div class="chatbox-empty-icon-wrapper">
+                            <i class="bi bi-chat-left-text"></i>
                         </div>
-
-                        @if($isOutgoing)
-                            <div class="message-avatar sender">{{ $senderInitial }}</div>
-                        @endif
+                        <h4>No messages yet</h4>
+                        <p>Start the conversation by sending a message.</p>
                     </div>
-            @endforeach
+                @endif
+
+                @foreach($messages as $message)
+                    @include('frontend.partials.message-row', [
+                        'message' => $message,
+                        'user_id' => $user_id,
+                        'recipientInitial' => $recipientInitial,
+                        'senderInitial' => $senderInitial,
+                    ])
+                @endforeach
+            </div>
+
+            <!-- Input -->
+            <form class="chatbox-input-form-container"
+                  id="chatboxMainForm"
+                  action="{{ route('message.send', $user_id) }}"
+                  method="POST"
+                  enctype="multipart/form-data">
+
+                @csrf
+                <input type="file" name="image" id="chatboxImageInput" accept="image/*" hidden>
+
+                <div class="chatbox-input-wrapper-block">
+                    <div class="chatbox-image-preview-container" id="chatboxImagePreview" style="display:none;">
+                        <span class="chatbox-image-filename-text" id="chatboxFileName"></span>
+                        <button type="button" class="chatbox-remove-image-button" id="chatboxRemoveImage" aria-label="Remove image">&times;</button>
+                    </div>
+
+                    <div class="chatbox-input-controls-row">
+                        <label for="chatboxImageInput" class="chatbox-attach-file-label">
+                            <i class="bi bi-image"></i>
+                        </label>
+
+                        <textarea name="message"
+                                  id="chatboxMessageInput"
+                                  class="chatbox-message-textarea-field"
+                                  rows="1"
+                                  placeholder="{{ $isSelfChat ? 'Write notes...' : 'Write a message...' }}"></textarea>
+
+                        <button type="submit" class="chatbox-send-message-button" aria-label="Send message">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
         </div>
-
-        @if(session('success') || session('error'))
-            <div class="chat-alert {{ session('success') ? 'success' : 'error' }}">
-                {{ session('success') ?? session('error') }}
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="chat-alert error">{{ $errors->first() }}</div>
-        @endif
-
-        <form class="chat-input-area" id="chatForm" action="{{ route('message.send', $user_id) }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <input type="file" name="image" id="imageInput" accept="image/*" hidden>
-
-            <div class="input-wrapper">
-                <div class="image-preview-bar" id="imagePreviewBar" style="display:none;">
-                    <span id="imageFileName"></span>
-                    <button type="button" class="remove-image-btn" id="removeImageBtn" title="Remove image">&times;</button>
-                </div>
-                <div class="input-row">
-                    <label for="imageInput" class="chat-attach-btn" title="Attach image">
-                        <i class="bi bi-image"></i>
-                    </label>
-
-                    <textarea
-                        name="message"
-                        id="messageInput"
-                        class="chat-text-input"
-                        rows="1"
-                        placeholder="{{ $isSelfChat ? 'Write your notes or reminders here.' : 'Write a message...' }}"
-                    >{{ old('message') }}</textarea>
-
-                    <button type="submit" class="chat-send-btn" title="Send message">
-                        <i class="bi bi-send-fill"></i>
-                    </button>
-                </div>
-            </div>
-        </form>
-
     </div>
 </div>
 
-<style>
-    .chat-page {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        height: 100%;
-        font-family: 'Inter', sans-serif;
-    }
-
-    .chat-container {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: #fff;
-        border-left: 1px solid #e3e6f0;
-        min-height: calc(100vh - 56px);
-        overflow: hidden;
-    }
-
-    .chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff;
-        flex-shrink: 0;
-        box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
-    }
-
-    .chat-user {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .chat-avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .chat-avatar.recipient {
-        background: rgba(255, 255, 255, 0.2);
-        border: 2px solid rgba(255, 255, 255, 0.5);
-    }
-
-    .message-avatar.sender,
-    .chat-avatar.sender {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff;
-        font-weight: 700;
-        font-size: 13px;
-    }
-
-    .message-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #e5e7eb;
-        color: #6b7280;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .chat-user-name {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 700;
-    }
-
-    .chat-self-badge {
-        font-size: 12px;
-        font-weight: 500;
-        opacity: 0.85;
-    }
-
-    .chat-status {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.75);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        background: #22c55e;
-        border-radius: 50%;
-    }
-
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        background: #f8f9fc;
-    }
-
-    .empty-chat {
-        text-align: center;
-        padding: 36px 16px;
-        border: 1px dashed #d1d5db;
-        border-radius: 16px;
-        background: #ffffff;
-        color: #6b7280;
-    }
-
-    .empty-chat-icon {
-        width: 52px;
-        height: 52px;
-        margin: 0 auto 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: #eef2ff;
-        color: #6366f1;
-        font-size: 24px;
-    }
-
-    .message-row {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        max-width: 85%;
-    }
-
-    .message-row.incoming { align-self: flex-start; }
-    .message-row.outgoing { align-self: flex-end; }
-
-    .message-bubble {
-        padding: 10px 14px;
-        border-radius: 16px;
-        word-break: break-word;
-        max-width: 100%;
-    }
-
-    .incoming .message-bubble {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-bottom-left-radius: 4px;
-    }
-
-    .outgoing .message-bubble {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff;
-        border-bottom-right-radius: 4px;
-    }
-
-    .message-bubble p {
-        margin: 0 0 8px;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-    .message-bubble.has-image p { margin-top: 0; }
-
-    .message-image {
-        display: block;
-        max-width: 220px;
-        border-radius: 10px;
-        width: 100%;
-        height: auto;
-        margin-top: 8px;
-    }
-
-    .message-time {
-        display: block;
-        margin-top: 8px;
-        font-size: 11px;
-        opacity: 0.7;
-    }
-
-    .message-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-
-    .message-action-btn {
-        border: none;
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .message-action-btn:hover {
-        transform: translateY(-1px);
-    }
-
-    .edit-btn,
-    .save-btn {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
-
-    .delete-btn {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .cancel-btn {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .message-edit-input {
-        width: 100%;
-        min-height: 70px;
-        margin-top: 12px;
-        padding: 10px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        font-size: 14px;
-        resize: vertical;
-        background: #ffffff;
-        color: #111827;
-    }
-
-    .edit-form-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-
-    .delete-form {
-        display: inline-flex;
-    }
-
-    .chat-alert {
-        margin: 0 20px 12px;
-        padding: 10px 14px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-
-    .chat-alert.success { background: #d1fae5; color: #065f46; }
-    .chat-alert.error { background: #fee2e2; color: #991b1b; }
-
-    .chat-input-area {
-        display: flex;
-        align-items: flex-end;
-        gap: 0;
-        padding: 16px 20px;
-        background: #ffffff;
-        border-top: 1px solid #e5e7eb;
-        flex-shrink: 0;
-    }
-
-    .input-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .input-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .image-preview-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #eef2ff;
-        border: 1px solid #c7d2fe;
-        border-radius: 10px;
-        padding: 6px 10px;
-        font-size: 13px;
-        color: #4338ca;
-        margin-left: 0;
-    }
-
-    .image-preview-bar.error {
-        background: #fff5f5;
-        border-color: #fecaca;
-        color: #991b1b;
-    }
-
-    .image-preview-bar span {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .remove-image-btn {
-        background: none;
-        border: none;
-        color: #6366f1;
-        font-size: 18px;
-        line-height: 1;
-        cursor: pointer;
-        padding: 0 2px;
-        flex-shrink: 0;
-    }
-
-    .remove-image-btn:hover {
-        color: #dc2626;
-    }
-
-    .chat-attach-btn,
-    .chat-send-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: #fff;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        cursor: pointer;
-        transition: transform 0.2s ease;
-    }
-
-    .chat-attach-btn:hover,
-    .chat-send-btn:hover {
-        transform: translateY(-1px);
-    }
-
-    .chat-text-input {
-        flex: 1;
-        min-height: 44px;
-        padding: 12px 14px;
-        border-radius: 18px;
-        border: 1px solid #e5e7eb;
-        resize: none;
-        font-size: 14px;
-        line-height: 1.6;
-        outline: none;
-        color: #111827;
-    }
-
-    .chat-text-input:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-    }
-</style>
+<!-- Image lightbox -->
+<div id="chatboxImageLightbox" class="chatbox-image-lightbox" aria-hidden="true">
+    <div class="chatbox-image-lightbox-backdrop" id="chatboxImageLightboxBackdrop"></div>
+    <button type="button" class="chatbox-image-lightbox-close" id="chatboxImageLightboxClose" aria-label="Close image">&times;</button>
+    <div class="chatbox-image-lightbox-dialog">
+        <img src="" alt="Message image preview" id="chatboxLightboxImage">
+    </div>
+</div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var imageInput = document.getElementById('imageInput');
-        var chatForm = document.getElementById('chatForm');
-        var imagePreviewBar = document.getElementById('imagePreviewBar');
-        var imageFileName = document.getElementById('imageFileName');
-        var removeImageBtn = document.getElementById('removeImageBtn');
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const input = document.getElementById('chatboxMessageInput');
+    const messagesArea = document.getElementById('chatboxMessagesArea');
+    const chatForm = document.getElementById('chatboxMainForm');
+    const sendBtn = chatForm.querySelector('.chatbox-send-message-button');
+    const fetchUrl = messagesArea.dataset.fetchUrl;
+    let lastMessageId = parseInt(messagesArea.dataset.lastId || '0', 10);
+    let isPolling = false;
+    let isSending = false;
 
-        var MAX_IMAGE_KB = 5120; // 5MB
+    function resizeMessageInput() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    }
 
-        if (imageInput) {
-            imageInput.addEventListener('change', function () {
-                if (imageInput.files && imageInput.files.length > 0) {
-                    var file = imageInput.files[0];
-                    var name = file.name;
-                    var sizeKB = Math.round(file.size / 1024);
-                    if (sizeKB > MAX_IMAGE_KB) {
-                        imageFileName.textContent = '⚠️ ' + name + ' (' + sizeKB + ' KB) — Max ' + MAX_IMAGE_KB + ' KB';
-                        imagePreviewBar.classList.add('error');
-                        imagePreviewBar.style.display = 'flex';
-                        document.querySelector('.chat-send-btn').disabled = true;
-                    } else {
-                        imageFileName.textContent = '📎 ' + name;
-                        imagePreviewBar.classList.remove('error');
-                        imagePreviewBar.style.display = 'flex';
-                        document.querySelector('.chat-send-btn').disabled = false;
-                    }
-                } else {
-                    imagePreviewBar.style.display = 'none';
-                    imageFileName.textContent = '';
-                    imagePreviewBar.classList.remove('error');
-                    document.querySelector('.chat-send-btn').disabled = false;
-                }
-            });
-        }
+    input.addEventListener('input', resizeMessageInput);
+    input.addEventListener('focus', function () {
+        window.scrollTo(0, 0);
+    });
 
-        if (removeImageBtn) {
-            removeImageBtn.addEventListener('click', function () {
-                imageInput.value = '';
-                imagePreviewBar.style.display = 'none';
-                imageFileName.textContent = '';
-                imagePreviewBar.classList.remove('error');
-                document.querySelector('.chat-send-btn').disabled = false;
-            });
-        }
+    const imageInput = document.getElementById('chatboxImageInput');
+    const preview = document.getElementById('chatboxImagePreview');
+    const fileName = document.getElementById('chatboxFileName');
+    const removeBtn = document.getElementById('chatboxRemoveImage');
 
-        // Prevent form submit when preview bar indicates error
-        if (chatForm) {
-            chatForm.addEventListener('submit', function (e) {
-                if (imagePreviewBar && imagePreviewBar.classList.contains('error')) {
-                    e.preventDefault();
-                    alert('Attached image is too large. Maximum allowed size is 5MB.');
-                }
-            });
-        }
-
-        // Auto-resize textarea
-        var textarea = document.getElementById('messageInput');
-        if (textarea) {
-            textarea.addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-            });
-        }
-
-        // Edit / cancel message buttons
-        document.querySelectorAll('.edit-btn').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var messageId = this.dataset.messageId;
-                var editForm = document.getElementById('editForm-' + messageId);
-                if (editForm) {
-                    editForm.style.display = 'block';
-                    editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        });
-
-        document.querySelectorAll('.cancel-btn').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var messageId = this.dataset.messageId;
-                var editForm = document.getElementById('editForm-' + messageId);
-                if (editForm) {
-                    editForm.style.display = 'none';
-                }
-            });
-        });
-
-        // Scroll to bottom
-        var chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+    imageInput.addEventListener('change', function () {
+        if (this.files.length) {
+            fileName.textContent = this.files[0].name;
+            preview.style.display = 'flex';
         }
     });
+
+    removeBtn.addEventListener('click', function () {
+        imageInput.value = '';
+        preview.style.display = 'none';
+    });
+
+    const lightbox = document.getElementById('chatboxImageLightbox');
+    const lightboxImg = document.getElementById('chatboxLightboxImage');
+    const lightboxBackdrop = document.getElementById('chatboxImageLightboxBackdrop');
+    const lightboxClose = document.getElementById('chatboxImageLightboxClose');
+
+    function openImageLightbox(src) {
+        lightboxImg.src = src;
+        lightbox.classList.add('chatbox-image-lightbox-open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageLightbox() {
+        lightbox.classList.remove('chatbox-image-lightbox-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.removeAttribute('src');
+        document.body.style.overflow = '';
+    }
+
+    lightboxBackdrop.addEventListener('click', closeImageLightbox);
+    lightboxClose.addEventListener('click', closeImageLightbox);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lightbox.classList.contains('chatbox-image-lightbox-open')) {
+            closeImageLightbox();
+        }
+    });
+
+    messagesArea.addEventListener('click', function (e) {
+        const editBtn = e.target.closest('.edit-btn');
+        if (editBtn) {
+            const form = document.getElementById('editForm-' + editBtn.dataset.id);
+            if (form) form.style.display = 'block';
+            return;
+        }
+
+        const cancelBtn = e.target.closest('.cancel-btn');
+        if (cancelBtn) {
+            const form = document.getElementById('editForm-' + cancelBtn.dataset.id);
+            if (form) form.style.display = 'none';
+            return;
+        }
+
+        const img = e.target.closest('.chatbox-message-image-display');
+        if (img) {
+            openImageLightbox(img.src);
+        }
+    });
+
+    messagesArea.addEventListener('keydown', function (e) {
+        const img = e.target.closest('.chatbox-message-image-display');
+        if (img && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            openImageLightbox(img.src);
+        }
+    });
+
+    function scrollMessagesToBottom() {
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    function removeEmptyState() {
+        const empty = document.getElementById('chatboxEmptyState');
+        if (empty) empty.remove();
+    }
+
+    function messageExists(id) {
+        return messagesArea.querySelector('[data-message-id="' + id + '"]') !== null;
+    }
+
+    function appendMessages(html) {
+        if (!html) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html.trim();
+
+        wrapper.querySelectorAll('[data-message-id]').forEach(function (row) {
+            const id = row.getAttribute('data-message-id');
+            if (messageExists(id)) return;
+
+            messagesArea.appendChild(row);
+            lastMessageId = Math.max(lastMessageId, parseInt(id, 10));
+        });
+
+        messagesArea.dataset.lastId = String(lastMessageId);
+        removeEmptyState();
+    }
+
+    async function pollMessages() {
+        if (isPolling || document.hidden) return;
+        isPolling = true;
+
+        try {
+            const url = fetchUrl + '?after=' + encodeURIComponent(lastMessageId);
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            const wasNearBottom = messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight < 80;
+
+            appendMessages(data.html);
+
+            if (data.last_id) {
+                lastMessageId = Math.max(lastMessageId, parseInt(data.last_id, 10));
+                messagesArea.dataset.lastId = String(lastMessageId);
+            }
+
+            if (wasNearBottom) {
+                scrollMessagesToBottom();
+            }
+        } catch (err) {
+            // ignore network errors during poll
+        } finally {
+            isPolling = false;
+        }
+    }
+
+    chatForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (isSending) return;
+
+        const text = input.value.trim();
+        const hasImage = imageInput.files.length > 0;
+        if (!text && !hasImage) return;
+
+        isSending = true;
+        sendBtn.disabled = true;
+
+        const formData = new FormData(chatForm);
+
+        try {
+            const response = await fetch(chatForm.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const msg = data.message || data.errors?.message?.[0] || 'Could not send message.';
+                alert(msg);
+                return;
+            }
+
+            appendMessages(data.html);
+            if (data.message_id) {
+                lastMessageId = Math.max(lastMessageId, parseInt(data.message_id, 10));
+                messagesArea.dataset.lastId = String(lastMessageId);
+            }
+
+            chatForm.reset();
+            imageInput.value = '';
+            preview.style.display = 'none';
+            resizeMessageInput();
+            scrollMessagesToBottom();
+        } catch (err) {
+            alert('Could not send message. Please try again.');
+        } finally {
+            isSending = false;
+            sendBtn.disabled = false;
+        }
+    });
+
+    scrollMessagesToBottom();
+    resizeMessageInput();
+    setInterval(pollMessages, 3000);
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) pollMessages();
+    });
+});
 </script>
+
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #FFFFFF;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+
+        .chatbox-page-wrapper {
+            height: 100%;
+            min-height: 0;
+            max-height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            position: relative;
+        }
+
+        .chatbox-page-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 300px;
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            z-index: 0;
+        }
+
+        .chatbox-main-container {
+            flex: 1;
+            min-height: 0;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 12px 16px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbox-card-wrapper {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            background: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(37, 99, 235, 0.15);
+            overflow: hidden;
+            animation: chatboxSlideUp 0.6s ease-out;
+        }
+
+        @keyframes chatboxSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbox-top-header {
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chatbox-top-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: chatboxFloatBubble 8s ease-in-out infinite;
+        }
+
+        @keyframes chatboxFloatBubble {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(-20px, -20px) scale(1.1);
+            }
+        }
+
+        .chatbox-user-avatar-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+            flex-shrink: 0;
+            position: relative;
+            animation: chatboxPulseAvatar 2s ease-in-out infinite;
+        }
+
+        @keyframes chatboxPulseAvatar {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+            }
+        }
+
+        .chatbox-user-avatar-circle.chatbox-recipient-avatar {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .chatbox-user-details-block {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chatbox-username-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chatbox-self-label-tag {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .chatbox-online-status-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chatbox-status-indicator-dot {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            animation: chatboxBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes chatboxBlink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .chatbox-messages-scroll-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            padding: 28px;
+            background: #f9fafb;
+            position: relative;
+        }
+
+        .chatbox-messages-scroll-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chatbox-messages-scroll-area::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+
+        .chatbox-messages-scroll-area::-webkit-scrollbar-thumb {
+            background: #2563EB;
+            border-radius: 4px;
+        }
+
+        .chatbox-messages-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: #1d4ed8;
+        }
+
+        .chatbox-empty-state-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            animation: chatboxFadeIn 0.8s ease-out;
+        }
+
+        @keyframes chatboxFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .chatbox-empty-icon-wrapper {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: chatboxBounceIn 1s ease-out;
+        }
+
+        @keyframes chatboxBounceIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .chatbox-empty-icon-wrapper i {
+            font-size: 48px;
+            color: #FFFFFF;
+        }
+
+        .chatbox-empty-state-container h4 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .chatbox-empty-state-container p {
+            font-size: 15px;
+            color: #6b7280;
+        }
+
+        .chatbox-message-row-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: chatboxMessageSlide 0.4s ease-out;
+        }
+
+        @keyframes chatboxMessageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbox-message-row-container.chatbox-outgoing-row {
+            flex-direction: row-reverse;
+        }
+
+        .chatbox-message-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            flex-shrink: 0;
+            border: 2px solid #FFFFFF;
+        }
+
+        .chatbox-message-avatar-small.chatbox-sender-avatar {
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            color: #FFFFFF;
+        }
+
+        .chatbox-bubble-content-wrapper {
+            max-width: 65%;
+            position: relative;
+        }
+
+        .chatbox-message-bubble-box {
+            background: #FFFFFF;
+            padding: 14px 18px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .chatbox-message-bubble-box:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .chatbox-outgoing-row .chatbox-message-bubble-box {
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            color: #FFFFFF;
+        }
+
+        .chatbox-message-bubble-box.chatbox-has-image-content {
+            padding: 8px;
+        }
+
+        .chatbox-message-text-paragraph {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chatbox-outgoing-row .chatbox-message-text-paragraph {
+            color: #FFFFFF;
+        }
+
+        .chatbox-message-image-display {
+            max-width: 100%;
+            border-radius: 12px;
+            display: block;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .chatbox-message-image-display:hover {
+            transform: scale(1.02);
+            opacity: 0.92;
+        }
+
+        .chatbox-message-bubble-box.chatbox-has-image-content .chatbox-message-image-display {
+            margin-top: 0;
+        }
+
+        .chatbox-image-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .chatbox-image-lightbox.chatbox-image-lightbox-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .chatbox-image-lightbox-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(6px);
+        }
+
+        .chatbox-image-lightbox-dialog {
+            position: relative;
+            z-index: 1;
+            max-width: min(92vw, 1100px);
+            max-height: 88vh;
+            animation: chatboxLightboxZoom 0.3s ease-out;
+        }
+
+        @keyframes chatboxLightboxZoom {
+            from {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .chatbox-image-lightbox-dialog img {
+            display: block;
+            max-width: min(92vw, 1100px);
+            max-height: 88vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        }
+
+        .chatbox-image-lightbox-close {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 10000;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .chatbox-image-lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.28);
+            transform: scale(1.08);
+        }
+
+        .chatbox-timestamp-label {
+            display: block;
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.4);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .chatbox-outgoing-row .chatbox-timestamp-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .chatbox-actions-menu-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            animation: chatboxFadeIn 0.3s ease-out;
+        }
+
+        .chatbox-action-button-style {
+            background: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chatbox-action-button-style:hover {
+            background: #f3f4f6;
+            border-color: #2563EB;
+            color: #2563EB;
+            transform: translateY(-1px);
+        }
+
+        .chatbox-action-button-style.chatbox-edit-action-btn {
+            border-color: #2563EB;
+            color: #2563EB;
+        }
+
+        .chatbox-action-button-style.chatbox-delete-action-btn {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
+        .chatbox-action-button-style.chatbox-delete-action-btn:hover {
+            background: #fee2e2;
+        }
+
+        .chatbox-action-button-style.chatbox-save-action-btn {
+            background: #2563EB;
+            border-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        .chatbox-action-button-style.chatbox-save-action-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .chatbox-inline-form-style {
+            display: inline;
+        }
+
+        .chatbox-edit-form-container {
+            margin-top: 10px;
+            animation: chatboxFadeIn 0.3s ease-out;
+        }
+
+        .chatbox-edit-textarea-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #2563EB;
+            border-radius: 12px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .chatbox-edit-textarea-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .chatbox-edit-buttons-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chatbox-notification-alert-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: chatboxSlideInRight 0.4s ease-out;
+        }
+
+        @keyframes chatboxSlideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .chatbox-notification-alert-box.chatbox-success-alert {
+            background: #10b981;
+            color: #FFFFFF;
+        }
+
+        .chatbox-notification-alert-box.chatbox-error-alert {
+            background: #dc2626;
+            color: #FFFFFF;
+        }
+
+        .chatbox-input-form-container {
+            flex-shrink: 0;
+            background: #FFFFFF;
+            padding: 20px 28px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .chatbox-input-wrapper-block {
+            background: #f9fafb;
+            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .chatbox-input-wrapper-block:focus-within {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .chatbox-image-preview-container {
+            padding: 12px 16px;
+            background: #eff6ff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: chatboxFadeIn 0.3s ease-out;
+        }
+
+        .chatbox-image-filename-text {
+            font-size: 14px;
+            color: #2563EB;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chatbox-image-filename-text::before {
+            content: '\F427';
+            font-family: 'bootstrap-icons';
+            font-size: 18px;
+        }
+
+        .chatbox-remove-image-button {
+            background: transparent;
+            border: none;
+            color: #6b7280;
+            font-size: 24px;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .chatbox-remove-image-button:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            transform: rotate(90deg);
+        }
+
+        .chatbox-input-controls-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 12px 16px;
+        }
+
+        .chatbox-attach-file-label {
+            width: 44px;
+            height: 44px;
+            background: #eff6ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .chatbox-attach-file-label:hover {
+            background: #2563EB;
+            transform: scale(1.05);
+        }
+
+        .chatbox-attach-file-label i {
+            font-size: 20px;
+            color: #2563EB;
+            transition: color 0.3s ease;
+        }
+
+        .chatbox-attach-file-label:hover i {
+            color: #FFFFFF;
+        }
+
+        .chatbox-message-textarea-field {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 15px;
+            font-family: inherit;
+            padding: 10px 0;
+            max-height: 120px;
+            color: #1f2937;
+        }
+
+        .chatbox-message-textarea-field:focus {
+            outline: none;
+        }
+
+        .chatbox-message-textarea-field::placeholder {
+            color: #9ca3af;
+        }
+
+        .chatbox-send-message-button {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .chatbox-send-message-button:hover {
+            transform: scale(1.05) rotate(15deg);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .chatbox-send-message-button:active {
+            transform: scale(0.95);
+        }
+
+        .chatbox-send-message-button i {
+            font-size: 18px;
+            color: #FFFFFF;
+        }
+
+        @keyframes chatboxTypingDots {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .chatbox-typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: #FFFFFF;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .chatbox-typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: chatboxTypingDots 1.4s ease-in-out infinite;
+        }
+
+        .chatbox-typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .chatbox-typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @media (max-width: 768px) {
+            .chatbox-main-container {
+                padding: 10px;
+            }
+
+            .chatbox-card-wrapper {
+                border-radius: 16px;
+            }
+
+            .chatbox-top-header {
+                padding: 20px;
+            }
+
+            .chatbox-user-avatar-circle {
+                width: 48px;
+                height: 48px;
+                font-size: 18px;
+            }
+
+            .chatbox-username-title {
+                font-size: 18px;
+            }
+
+            .chatbox-messages-scroll-area {
+                padding: 20px;
+            }
+
+            .chatbox-bubble-content-wrapper {
+                max-width: 80%;
+            }
+
+            .chatbox-input-form-container {
+                padding: 16px 20px;
+            }
+        }
+
+        .chatbox-message-unsent-style {
+            font-style: italic;
+            color: #9ca3af;
+        }
+
+        .chatbox-edited-label-text {
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .chatbox-outgoing-row .chatbox-edited-label-text {
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
 
 @endsection

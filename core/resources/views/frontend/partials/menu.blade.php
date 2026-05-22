@@ -4,6 +4,7 @@ use App\Models\Message;
 
 $activeUserId = request()->route('user_id') !== null ? (string) request()->route('user_id') : null;
 $isChatPage = request()->routeIs('message');
+$isLandingPage = request()->is('/');
 @endphp
 
 <!-- Top Bar -->
@@ -76,7 +77,8 @@ $isChatPage = request()->routeIs('message');
 </nav>
 
 <!-- Sidebar + Content -->
-<div class="row m-0 chatbox-main-layout-row">
+<div class="row m-0 chatbox-main-layout-row {{ $isLandingPage ? 'chatbox-layout-landing' : '' }}">
+    @unless($isLandingPage)
     <div class="col-md-3 p-0">
         <div class="chatbox-sidebar-container">
 
@@ -151,9 +153,10 @@ $isChatPage = request()->routeIs('message');
             </ul>
         </div>
     </div>
+    @endunless
 
     <!-- Content -->
-    <div class="col-md-9 {{ $isChatPage ? 'p-0' : 'p-0 chatbox-content-area' }}">
+    <div class="{{ $isLandingPage ? 'col-12' : 'col-md-9' }} p-0 {{ $isChatPage ? 'chatbox-chat-page-column' : 'chatbox-content-area' }}">
         @yield('content')
     </div>
 </div>
@@ -209,11 +212,19 @@ document.addEventListener('DOMContentLoaded', function () {
     box-sizing: border-box;
 }
 
+:root {
+    --chatbox-navbar-height: 64px;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #FFFFFF;
     color: #1f2937;
     overflow-x: hidden;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Top Navbar Styles */
@@ -222,8 +233,15 @@ body {
     border-bottom: 1px solid #e5e7eb;
     position: sticky;
     top: 0;
-    z-index: 1000;
-    animation: chatbox-navbar-slide-down 0.5s ease-out;
+    z-index: 1050;
+    flex-shrink: 0;
+    min-height: var(--chatbox-navbar-height);
+    animation: chatbox-navbar-slide-down 0.5s ease-out forwards;
+}
+
+.chatbox-top-navbar .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
 @keyframes chatbox-navbar-slide-down {
@@ -331,7 +349,20 @@ body {
 
 /* Main Layout */
 .chatbox-main-layout-row {
-    height: calc(100vh - 60px);
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - var(--chatbox-navbar-height));
+}
+
+.chatbox-layout-landing {
+    height: auto;
+    min-height: calc(100vh - var(--chatbox-navbar-height));
+}
+
+.chatbox-layout-landing .chatbox-content-area {
+    height: auto;
+    min-height: calc(100vh - var(--chatbox-navbar-height));
+    overflow: visible;
 }
 
 /* Sidebar Styles */
@@ -602,6 +633,14 @@ body {
     background: #FFFFFF;
     height: 100%;
     overflow-y: auto;
+}
+
+.chatbox-chat-page-column {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .chatbox-main-content-wrapper {
