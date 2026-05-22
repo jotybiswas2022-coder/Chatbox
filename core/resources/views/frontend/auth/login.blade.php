@@ -639,3 +639,25 @@
             margin-top: 0.25rem;
         }
     </style>
+    <style>
+    /* Modern Overrides */
+    :root {
+      --primary: hsl(220,60%,55%);
+      --primary-dark: hsl(220,60%,45%);
+      --bg: hsl(210,30%,96%);
+      --bg-dark: hsl(210,30%,12%);
+      --text: hsl(210,15%,20%);
+      --text-dark: hsl(210,15%,90%);
+    }
+    [data-theme="dark"] {
+      --bg: var(--bg-dark);
+      --text: var(--text-dark);
+      --primary: var(--primary-dark);
+    }
+    body { background: var(--bg); color: var(--text); }
+    .chatbox-login-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(12px) saturate(180%); border: 1px solid rgba(255,255,255,0.2); }
+    .chatbox-login-input { background: rgba(255,255,255,0.6); border-color: var(--primary); }
+    .chatbox-login-input:focus { border-color: var(--primary-dark); box-shadow: 0 0 0 3px hsla(220,60%,50%,0.2); }
+    .chatbox-login-btn { background: var(--primary); }
+    .chatbox-login-btn:hover { background: var(--primary-dark); }
+    </style>

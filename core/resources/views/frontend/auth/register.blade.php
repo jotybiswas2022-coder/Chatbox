@@ -68,7 +68,7 @@
                         <label class="chatbox-label">Full Name</label>
                         <div class="chatbox-input-wrap">
                             <i class="bi bi-person-fill chatbox-field-icon"></i>
-                            <input id="name" type="text" class="chatbox-input" name="name" required>
+                            <input id="name" type="text" class="chatbox-input" placeholder="Enter Your Full Name" name="name" required>
                         </div>
                     </div>
 
@@ -77,7 +77,7 @@
                         <label class="chatbox-label">Email</label>
                         <div class="chatbox-input-wrap">
                             <i class="bi bi-envelope-fill chatbox-field-icon"></i>
-                            <input id="email" type="email" class="chatbox-input" name="email" required>
+                            <input id="email" type="email" class="chatbox-input" placeholder="Enter Your Email" name="email" required>
                         </div>
                     </div>
 
@@ -86,7 +86,7 @@
                         <label class="chatbox-label">Password</label>
                         <div class="chatbox-input-wrap">
                             <i class="bi bi-lock-fill chatbox-field-icon"></i>
-                            <input id="password" type="password" class="chatbox-input" name="password" required>
+                            <input id="password" type="password" class="chatbox-input" placeholder="Enter Your Password" name="password" required>
                         </div>
 
                         <div class="chatbox-password-checker">
@@ -109,7 +109,7 @@
                         <label class="chatbox-label">Confirm Password</label>
                         <div class="chatbox-input-wrap">
                             <i class="bi bi-shield-fill-check chatbox-field-icon"></i>
-                            <input id="password-confirm" type="password" class="chatbox-input" name="password_confirmation" required>
+                            <input id="password-confirm" type="password" class="chatbox-input" placeholder="Confirm Password" name="password_confirmation" required>
                         </div>
 
                         <div class="chatbox-password-match" id="password-match">
@@ -228,8 +228,10 @@ document.getElementById('chatboxRegisterForm').addEventListener('submit', functi
         .chatbox-login-container {
             position: relative;
             width: 100%;
-            max-width: 480px;
+            max-width: 420px; /* reduced width for better fit */
             z-index: 1;
+            padding-top: 40px; /* Added top padding to prevent cut-off */
+            padding-bottom: 20px; /* extra bottom padding */
         }
 
         /* Animated Particles */
@@ -531,7 +533,7 @@ document.getElementById('chatboxRegisterForm').addEventListener('submit', functi
 
         /* Body */
         .chatbox-body {
-            padding: 24px;
+            padding: 16px; /* reduced padding for compact box */
         }
 
         /* Input Groups */

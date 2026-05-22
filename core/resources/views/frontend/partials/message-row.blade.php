@@ -18,7 +18,7 @@
             @else
                 @if($message->message)
                     <p class="chatbox-message-text-paragraph">
-                        {{ $message->message }}
+                        {!! preg_replace('/(https?:\/\/[^\s]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $message->message) !!}
                         @if($message->edited_at)
                             <small>(Edited)</small>
                         @endif
