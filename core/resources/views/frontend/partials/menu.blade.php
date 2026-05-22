@@ -1,5 +1,6 @@
 @php
 use Illuminate\Support\Str;
+use App\Models\Message;
 
 $activeUserId = request()->route('user_id') !== null ? (string) request()->route('user_id') : null;
 $isChatPage = request()->routeIs('message');
@@ -93,8 +94,13 @@ $isChatPage = request()->routeIs('message');
                     </li>
 
 
-                    <li class="mt-3 ps-3 text-muted sidebar-label">All Users</li>
-                    @php $users = \App\Models\User::where('id', '!=', auth()->id())->orderBy('name')->get(); @endphp
+                    <li class="mt-3 ps-3 text-muted sidebar-label">Recent Chats</li>
+                    @php
+                        $chattedUserIds = Message::conversationPartnerIdsFor((int) auth()->id());
+                        $users = \App\Models\User::whereIn('id', $chattedUserIds)
+                            ->orderBy('name')
+                            ->get();
+                    @endphp
                     @foreach($users as $user)
                         <li class="user-item" data-name="{{ strtolower($user->name) }}" data-email="{{ strtolower($user->email) }}">
                             <a href="{{ route('message', $user->id) }}" class="{{ $activeUserId === (string) $user->id ? 'active' : '' }}">
@@ -266,14 +272,14 @@ $isChatPage = request()->routeIs('message');
 document.addEventListener('DOMContentLoaded', function () {
     const userSearch = document.getElementById('userSearch');
     const searchResult = document.getElementById('searchResult');
+    const chatUrlPrefix = "{{ url('/') }}/";
+    const searchUrl = "{{ route('users.search') }}";
 
     if (!userSearch || !searchResult) return; // input or box not present (e.g. guest)
 
     userSearch.addEventListener('input', function () {
-        const query = this.value.trim().toLowerCase();
-
+        const query = this.value.trim();
         const userItems = document.querySelectorAll('.sidebar-menu .user-item');
-        let anyVisible = false;
 
         if (query.length < 1) {
             userItems.forEach(i => i.style.display = '');
@@ -282,24 +288,38 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        userItems.forEach(item => {
-            const name = (item.dataset.name || '').toLowerCase();
-            const email = (item.dataset.email || '').toLowerCase();
-            if (name.includes(query) || email.includes(query)) {
-                item.style.display = '';
-                anyVisible = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
+        userItems.forEach(item => item.style.display = 'none');
 
-        if (!anyVisible) {
-            searchResult.innerHTML = '<div class="search-item text-muted">No user found</div>';
-            searchResult.style.display = 'block';
-        } else {
-            searchResult.style.display = 'none';
-            searchResult.innerHTML = '';
-        }
+        fetch(`${searchUrl}?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(users => {
+                if (!Array.isArray(users) || users.length === 0) {
+                    searchResult.innerHTML = '<div class="search-item text-muted">No user found</div>';
+                    searchResult.style.display = 'block';
+                    return;
+                }
+
+                searchResult.innerHTML = users.map(user => {
+                    return `<a class="search-item" href="${chatUrlPrefix}${user.id}/message">
+                                <strong>${escapeHtml(user.name)}</strong>
+                                <div class="text-small text-secondary">${escapeHtml(user.email || '')}</div>
+                            </a>`;
+                }).join('');
+                searchResult.style.display = 'block';
+            })
+            .catch(() => {
+                searchResult.innerHTML = '<div class="search-item text-muted">Search failed. Please try again.</div>';
+                searchResult.style.display = 'block';
+            });
     });
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/\'/g, '&#039;');
+    }
 });
 </script>

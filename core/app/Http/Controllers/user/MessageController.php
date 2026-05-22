@@ -48,6 +48,10 @@ class MessageController extends Controller
                 ->get();
         }
 
+        $messages = $messages
+            ->filter(fn ($msg) => $msg->isVisibleTo((int) $senderId))
+            ->values();
+
         return view('frontend.message', compact('user_id', 'recipient', 'messages'));
     }
 
@@ -99,5 +103,93 @@ class MessageController extends Controller
         ]);
 
         return back()->with('success', 'Message sent successfully!');
+    }
+
+    public function updateMessage(Request $request, $user_id, $message_id)
+    {
+        User::findOrFail($user_id);
+        $message = Message::findOrFail($message_id);
+
+        if ((int) $message->sender_id !== auth()->id() || (int) $message->recipient_id !== (int) $user_id) {
+            abort(403);
+        }
+
+        if (is_array($request->input('message'))) {
+            $request->merge(['message' => null]);
+        }
+
+        $request->validate([
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        $messageText = $request->input('message');
+        if ($messageText !== null) {
+            $messageText = trim($messageText);
+            if ($messageText === '') {
+                $messageText = null;
+            }
+        }
+
+        if (!$messageText && !$message->image_path) {
+            return back()->withErrors(['message' => 'Please provide a message or keep the attached image.']);
+        }
+
+        $message->update([
+            'message' => $messageText,
+            'edited_at' => now(),
+        ]);
+
+        return back()->with('success', 'Message updated successfully!');
+    }
+
+    public function deleteMessage($user_id, $message_id)
+    {
+        User::findOrFail($user_id);
+        $message = Message::findOrFail($message_id);
+
+        if ((int) $message->sender_id !== auth()->id() || (int) $message->recipient_id !== (int) $user_id) {
+            abort(403);
+        }
+
+        if ($message->image_path) {
+            Storage::disk('public')->delete($message->image_path);
+        }
+
+        $message->update([
+            'deleted_at' => now(),
+            'message' => null,
+            'image_path' => null,
+        ]);
+
+        return back()->with('success', 'Message unsent successfully!');
+    }
+
+    public function deleteMessageForMe($user_id, $message_id)
+    {
+        $currentUserId = auth()->id();
+        $message = Message::findOrFail($message_id);
+
+        $isParticipant = (int) $message->sender_id === (int) $currentUserId
+            || (int) $message->recipient_id === (int) $currentUserId;
+        $isCorrectConversation = (int) $message->sender_id === (int) $user_id
+            || (int) $message->recipient_id === (int) $user_id;
+
+        if (!$isParticipant || !$isCorrectConversation) {
+            abort(403);
+        }
+
+        // Add current user to deleted_for_recipients
+        $deletedFor = is_array($message->deleted_for_recipients) 
+            ? $message->deleted_for_recipients 
+            : [];
+        
+        $deletedFor = array_map('intval', $deletedFor);
+        
+        if (!in_array((int)$currentUserId, $deletedFor, true)) {
+            $deletedFor[] = (int)$currentUserId;
+            $message->update(['deleted_for_recipients' => $deletedFor]);
+        }
+
+        return back()->with('success', 'Message deleted for you!');
     }
 }

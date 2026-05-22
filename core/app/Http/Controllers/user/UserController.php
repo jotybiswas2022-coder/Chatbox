@@ -24,11 +24,20 @@ class UserController extends Controller
 
     public function search(Request $request)
     {
-        $query = $request->get('query');
+        $query = trim($request->get('query', ''));
 
         $users = User::where('id', '!=', auth()->id())
-            ->where('email', 'LIKE', "%{$query}%")
-            ->select('id', 'name')
+            ->when($query !== '', function ($queryBuilder) use ($query) {
+                $queryBuilder->where(function ($inner) use ($query) {
+                    $inner->where('email', 'LIKE', "%{$query}%")
+                          ->orWhere('name', 'LIKE', "%{$query}%");
+
+                    if (is_numeric($query)) {
+                        $inner->orWhere('id', $query);
+                    }
+                });
+            })
+            ->select('id', 'name', 'email')
             ->limit(10)
             ->get();
 

@@ -24,6 +24,9 @@ Route::middleware('auth')->get('/media/{path}', [MessageController::class, 'medi
 Route::middleware('auth')->prefix('/{user_id}/message')->controller(MessageController::class)->group(function () {
     Route::get('/', 'message')->name('message');
     Route::post('/send', 'sendMessage')->name('message.send');
+    Route::put('/{message_id}/update', 'updateMessage')->name('message.update');
+    Route::delete('/{message_id}/delete', 'deleteMessage')->name('message.destroy');
+    Route::delete('/{message_id}/delete-for-me', 'deleteMessageForMe')->name('message.delete-for-me');
 });
 
 //Search

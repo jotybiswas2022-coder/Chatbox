@@ -41,28 +41,74 @@
             @endif
 
             @foreach($messages as $message)
-                @php $isOutgoing = $message->sender_id === auth()->id(); @endphp
-                <div class="message-row {{ $isOutgoing ? 'outgoing' : 'incoming' }}">
-                    @if(!$isOutgoing)
-                        <div class="message-avatar">{{ $recipientInitial }}</div>
-                    @endif
-
-                    <div class="message-bubble {{ $message->image_path ? 'has-image' : '' }}">
-                        @if($message->message)
-                            <p>{{ $message->message }}</p>
+                    @php $isOutgoing = (int) $message->sender_id === auth()->id(); @endphp
+                    <div class="message-row {{ $isOutgoing ? 'outgoing' : 'incoming' }}">
+                        @if(!$isOutgoing)
+                            <div class="message-avatar">{{ $recipientInitial }}</div>
                         @endif
 
-                        @if($message->image_path)
-                            <img src="{{ route('media.show', ['path' => $message->image_path]) }}" alt="Chat image" class="message-image">
-                        @endif
+                            <div class="message-bubble {{ $message->image_path ? 'has-image' : '' }}" id="messageBubble-{{ $message->id }}">
+                            @if($message->deleted_at)
+                                <p class="message-text text-muted"><em>Unsent</em></p>
+                            @else
+                                @if($message->message)
+                                    <p class="message-text">{{ $message->message }}
+                                        @if($message->edited_at)
+                                            <small class="text-muted"> (Edited)</small>
+                                        @endif
+                                    </p>
+                                @endif
 
-                        <span class="message-time">{{ $message->created_at->format('h:i A') }}</span>
+                                @if($message->image_path)
+                                    <img src="{{ route('media.show', ['path' => $message->image_path]) }}" alt="Chat image" class="message-image">
+                                @endif
+                            @endif
+
+                            <span class="message-time">{{ $message->created_at->format('h:i A') }}</span>
+
+                            @if($isOutgoing)
+                                <div class="message-actions">
+                                    @if(!$message->deleted_at)
+                                        <button type="button" class="message-action-btn edit-btn" data-message-id="{{ $message->id }}">Edit</button>
+                                    @endif
+                                    <form method="POST" action="{{ route('message.destroy', [$user_id, $message->id]) }}" class="inline-form delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="message-action-btn delete-btn" onclick="return confirm('Are you sure you want to unsend this message?')">Unsend</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('message.delete-for-me', [$user_id, $message->id]) }}" class="inline-form delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="message-action-btn delete-btn">Delete for me</button>
+                                    </form>
+                                </div>
+
+                                @if(!$message->deleted_at)
+                                    <form method="POST" action="{{ route('message.update', [$user_id, $message->id]) }}" class="edit-message-form" id="editForm-{{ $message->id }}" style="display:none;">
+                                        @csrf
+                                        @method('PUT')
+                                        <textarea name="message" class="message-edit-input" rows="2" placeholder="Update your message...">{{ $message->message }}</textarea>
+                                        <div class="edit-form-buttons">
+                                            <button type="submit" class="message-action-btn save-btn">Save</button>
+                                            <button type="button" class="message-action-btn cancel-btn" data-message-id="{{ $message->id }}">Cancel</button>
+                                        </div>
+                                    </form>
+                                @endif
+                            @else
+                                <div class="message-actions">
+                                    <form method="POST" action="{{ route('message.delete-for-me', [$user_id, $message->id]) }}" class="inline-form delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="message-action-btn delete-btn">Delete for me</button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($isOutgoing)
+                            <div class="message-avatar sender">{{ $senderInitial }}</div>
+                        @endif
                     </div>
-
-                    @if($isOutgoing)
-                        <div class="message-avatar sender">{{ $senderInitial }}</div>
-                    @endif
-                </div>
             @endforeach
         </div>
 
@@ -296,6 +342,66 @@
         opacity: 0.7;
     }
 
+    .message-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .message-action-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .message-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .edit-btn,
+    .save-btn {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .delete-btn {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .cancel-btn {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .message-edit-input {
+        width: 100%;
+        min-height: 70px;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 14px;
+        resize: vertical;
+        background: #ffffff;
+        color: #111827;
+    }
+
+    .edit-form-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .delete-form {
+        display: inline-flex;
+    }
+
     .chat-alert {
         margin: 0 20px 12px;
         padding: 10px 14px;
@@ -475,6 +581,28 @@
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
         }
+
+        // Edit / cancel message buttons
+        document.querySelectorAll('.edit-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var messageId = this.dataset.messageId;
+                var editForm = document.getElementById('editForm-' + messageId);
+                if (editForm) {
+                    editForm.style.display = 'block';
+                    editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+
+        document.querySelectorAll('.cancel-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var messageId = this.dataset.messageId;
+                var editForm = document.getElementById('editForm-' + messageId);
+                if (editForm) {
+                    editForm.style.display = 'none';
+                }
+            });
+        });
 
         // Scroll to bottom
         var chatMessages = document.getElementById('chatMessages');
