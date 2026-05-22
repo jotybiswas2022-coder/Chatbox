@@ -76,8 +76,12 @@ $isLandingPage = request()->is('/');
     </div>
 </nav>
 
+@if($isChatPage)
+<script>document.documentElement.classList.add('chatbox-message-active');</script>
+@endif
+
 <!-- Sidebar + Content -->
-<div class="row m-0 chatbox-main-layout-row {{ $isLandingPage ? 'chatbox-layout-landing' : '' }}">
+<div class="row m-0 chatbox-main-layout-row {{ $isLandingPage ? 'chatbox-layout-landing' : '' }} {{ $isChatPage ? 'chatbox-layout-message' : '' }}">
     @unless($isLandingPage)
     <div class="col-md-3 p-0">
         <div class="chatbox-sidebar-container">
@@ -643,6 +647,39 @@ body {
     min-height: 0;
 }
 
+/* Message thread: lock page scroll; only the inbox list scrolls */
+html.chatbox-message-active,
+body.chatbox-message-active {
+    height: 100%;
+    overflow: hidden;
+}
+
+body.chatbox-message-active {
+    min-height: 0;
+}
+
+.chatbox-layout-message {
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - var(--chatbox-navbar-height));
+    height: calc(100dvh - var(--chatbox-navbar-height));
+    max-height: calc(100vh - var(--chatbox-navbar-height));
+    max-height: calc(100dvh - var(--chatbox-navbar-height));
+    overflow: hidden;
+}
+
+.chatbox-layout-message > [class*="col-"] {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chatbox-layout-message .chatbox-sidebar-container {
+    flex: 1;
+    min-height: 0;
+}
+
 .chatbox-main-content-wrapper {
     display: flex;
     flex-direction: column;
@@ -803,18 +840,39 @@ body {
 }
 
 @media (max-width: 768px) {
-    .chatbox-main-layout-row {
+    .chatbox-main-layout-row:not(.chatbox-layout-message) {
         flex-direction: column;
     }
 
-    .chatbox-sidebar-container {
+    .chatbox-main-layout-row:not(.chatbox-layout-message) .chatbox-sidebar-container {
         height: auto;
         min-height: 300px;
     }
 
-    .chatbox-content-area {
+    .chatbox-main-layout-row:not(.chatbox-layout-message) .chatbox-content-area {
         height: auto;
         min-height: 400px;
+    }
+
+    .chatbox-layout-message {
+        flex-direction: column;
+    }
+
+    .chatbox-layout-message > .col-md-3 {
+        flex: 0 0 auto;
+        max-height: 32vh;
+        height: auto;
+    }
+
+    .chatbox-layout-message > .col-md-3 .chatbox-sidebar-container {
+        max-height: 32vh;
+        height: 100%;
+    }
+
+    .chatbox-layout-message > .chatbox-chat-page-column {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
     }
 
     .chatbox-welcome-title {

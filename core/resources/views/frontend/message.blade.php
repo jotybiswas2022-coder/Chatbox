@@ -104,6 +104,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.body.classList.add('chatbox-message-active');
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     const input = document.getElementById('chatboxMessageInput');
     const messagesArea = document.getElementById('chatboxMessagesArea');
@@ -121,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     input.addEventListener('input', resizeMessageInput);
     input.addEventListener('focus', function () {
-        window.scrollTo(0, 0);
+        scrollMessagesToBottom();
     });
 
     const imageInput = document.getElementById('chatboxImageInput');
@@ -331,14 +333,15 @@ document.addEventListener('DOMContentLoaded', function () {
             box-sizing: border-box;
         }
 
-        body {
+        body.chatbox-message-active {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: #FFFFFF;
             color: #1f2937;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         .chatbox-page-wrapper {
+            flex: 1;
             height: 100%;
             min-height: 0;
             max-height: 100%;
@@ -515,6 +518,8 @@ document.addEventListener('DOMContentLoaded', function () {
             overflow-y: auto;
             overflow-x: hidden;
             overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
             padding: 28px;
             background: #f9fafb;
             position: relative;
@@ -1011,6 +1016,7 @@ document.addEventListener('DOMContentLoaded', function () {
             font-family: inherit;
             padding: 10px 0;
             max-height: 120px;
+            overflow-y: auto;
             color: #1f2937;
         }
 
