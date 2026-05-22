@@ -672,6 +672,20 @@ document.addEventListener('DOMContentLoaded', function () {
             padding: 8px;
         }
 
+        /* Incoming message links (blue) */
+        .chatbox-message-bubble-box a {
+            color: #2563EB; /* match bubble background */
+            text-decoration: underline;
+            background: transparent;
+        }
+        .chatbox-message-bubble-box a:hover {
+            opacity: 0.85;
+        }
+        /* Outgoing message links (white) */
+        .chatbox-outgoing-row .chatbox-message-bubble-box a {
+            color: #FFFFFF;
+        }
+
         .chatbox-message-text-paragraph {
             margin: 0;
             font-size: 15px;

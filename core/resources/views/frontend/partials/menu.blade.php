@@ -4,7 +4,7 @@ use App\Models\Message;
 
 $activeUserId = request()->route('user_id') !== null ? (string) request()->route('user_id') : null;
 $isChatPage = request()->routeIs('message');
-$isLandingPage = request()->is('/');
+$isLandingPage = request()->is('/') || request()->is('contact');
 @endphp
 
 <!-- Top Bar -->
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const query = this.value.trim();
         const userItems = document.querySelectorAll('.user-item');
 
-        if (query.length < 1) {
+        if (!query.includes('@') || query.length < 1) {
             userItems.forEach(i => i.style.display = '');
             searchResult.style.display = 'none';
             searchResult.innerHTML = '';
