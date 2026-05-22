@@ -20,7 +20,7 @@
                     Fast, secure, and simple communication for everyone.
                 </p>
 
-                <a href="#" class="chatbox-btn-primary" id="getStartedBtn">
+                <a href="{{ auth()->check() ? route('message', auth()->id()) : "/login" }}" class="chatbox-btn-primary">
                     <i class="bi bi-box-arrow-in-right"></i> Get Started
                 </a>
             </div>
@@ -81,10 +81,10 @@
 
     </div>
 
-    <!-- Floating Message Send Button -->
-    <div class="chatbox-message-send-animation">
+   <!-- Floating Message Send Button -->
+    <a href="{{ auth()->check() ? route('message', auth()->id()) : "/login" }}" class="chatbox-message-send-animation">
         <i class="bi bi-chat-dots-fill"></i>
-    </div>
+    </a>
 
     <script>
         // Scroll Reveal Animation
