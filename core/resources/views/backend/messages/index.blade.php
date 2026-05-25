@@ -176,13 +176,21 @@
         padding: 16px 22px; border-top: 1px solid var(--border);
         font-size: .8rem; color: var(--muted);
         background: var(--surface2);
+        gap: 12px;
     }
-    .table-footer .pagination { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .table-footer .pagination {
+        display: flex; flex-wrap: nowrap; gap: 8px; align-items: center;
+        margin: 0; padding: 0; list-style: none;
+    }
+    .table-footer .pagination li {
+        margin: 0;
+    }
     .table-footer .page-link {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 36px; height: 36px; padding: 0 12px;
         background: var(--surface); border: 1px solid var(--border);
-        border-radius: 9px; padding: 7px 13px; color: var(--text);
-        font-size: .8rem; text-decoration: none; transition: all .15s;
-        min-width: 42px; text-align: center;
+        border-radius: 10px; color: var(--text);
+        font-size: .82rem; text-decoration: none; transition: all .15s;
     }
     .table-footer .page-item.active .page-link {
         border-color: var(--accent); color: #ffffff; background: var(--accent);
@@ -194,9 +202,9 @@
         opacity: .55; cursor: not-allowed;
         background: var(--surface2); border-color: var(--border);
     }
-    .table-footer .pagination .page-item:first-child .page-link,
-    .table-footer .pagination .page-item:last-child .page-link {
-        padding-left: 10px; padding-right: 10px;
+    .table-footer .page-item:first-child .page-link,
+    .table-footer .page-item:last-child .page-link {
+        min-width: 52px;
     }
 
     /* ── Empty state ── */
@@ -292,7 +300,7 @@
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                 </svg>
-                <input id="messagesSearch" type="search" placeholder="Search by sender…">
+                <input id="messagesSearch" type="search" placeholder="Search by sender…" value="{{ request('search') }}">
             </div>
         </div>
 
@@ -507,17 +515,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Live search
+    // Live search (server-side) - reload page with sender filter
     function debounce(fn, d){ var t; return function(){ clearTimeout(t); var a=arguments,c=this; t=setTimeout(function(){ fn.apply(c,a); }, d); }; }
     var inp = document.getElementById('messagesSearch');
     if (inp) {
         inp.addEventListener('input', debounce(function(e){
-            var q = e.target.value.toLowerCase().trim();
-            document.querySelectorAll('table tbody tr').forEach(function(row){
-                var sender = ((row.cells[1] && row.cells[1].innerText) || '').toLowerCase();
-                row.style.display = (!q || sender.indexOf(q) !== -1) ? '' : 'none';
-            });
-        }, 200));
+            var q = e.target.value.trim();
+            var params = new URLSearchParams(window.location.search);
+            if (q) {
+                params.set('search', q);
+            } else {
+                params.delete('search');
+            }
+            params.delete('page');
+            window.location.search = params.toString();
+        }, 300));
     }
 });
 </script>

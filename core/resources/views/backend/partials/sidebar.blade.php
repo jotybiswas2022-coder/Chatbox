@@ -59,7 +59,7 @@ use Illuminate\Support\Str;
 </nav>
 
 <!-- Sidebar + Content -->
-<div class="row m-0" style="min-height: 100vh;">
+<div class="row m-0" style="min-height: calc(100vh - 64px);">
     <!-- Sidebar -->
     <div class="col-md-3 p-0">
     <div class="sidebar">
@@ -128,10 +128,21 @@ use Illuminate\Support\Str;
 /* Sidebar */
 .sidebar {
     background: #fefefe;
-    min-height: 100vh;
+    min-height: calc(100vh - 64px);
+    position: sticky;
+    top: 0;
     box-shadow: 4px 0 20px rgba(0,0,0,0.08);
     padding-top: 20px;
     border-right: 1px solid #e3e6f0;
+    overflow: hidden;
+}
+.col-md-9.p-4 {
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+.row.m-0 {
+    min-height: calc(100vh - 64px);
+    overflow: hidden;
 }
 .sidebar-menu {
     list-style: none;
@@ -164,7 +175,9 @@ use Illuminate\Support\Str;
 
 /* Responsive tweaks */
 @media (max-width: 768px) {
-    .sidebar { min-height: auto; padding-top: 0; }
+    .sidebar { min-height: auto; padding-top: 0; position: static; }
     .navbar-nav { text-align: center; }
+    .col-md-9.p-4 { max-height: none; overflow: visible; }
+    .row.m-0 { min-height: auto; overflow: visible; }
 }
 </style>
