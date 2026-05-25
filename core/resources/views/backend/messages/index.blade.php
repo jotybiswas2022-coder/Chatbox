@@ -92,7 +92,7 @@
     }
 
     /* ── Search ── */
-    .search-wrap { position: relative; flex: 1; max-width: 340px; }
+    .search-wrap { position: relative; flex: 1; max-width: 340px; display: flex; }
     .search-wrap svg {
         position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
         color: var(--muted); pointer-events: none;
@@ -108,6 +108,18 @@
         box-shadow: 0 0 0 3px var(--accent-glow);
     }
     .search-wrap input::placeholder { color: var(--muted); }
+    .search-wrap button {
+        margin-left: 4px;
+        background: var(--accent);
+        border: none;
+        color: #fff;
+        padding: 9px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: .85rem;
+        transition: opacity .18s, transform .12s;
+    }
+    .search-wrap button:hover { opacity: .88; transform: translateY(-1px); }
 
     /* ── Table ── */
     .table-wrap { overflow-x: auto; }
@@ -296,12 +308,13 @@
     {{-- Card --}}
     <div class="inbox-card">
         <div class="card-toolbar">
-            <div class="search-wrap">
+                <form method="GET" action="" class="search-wrap">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                 </svg>
-                <input id="messagesSearch" type="search" placeholder="Search by sender…" value="{{ request('search') }}">
-            </div>
+                <input id="messagesSearch" name="search" type="search" placeholder="Search by sender…" value="{{ request('search') }}" autocomplete="off">
+                <button type="submit" class="search-button">Search</button>
+            </form>
         </div>
 
         <div class="table-wrap">
@@ -515,22 +528,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Live search (server-side) - reload page with sender filter
-    function debounce(fn, d){ var t; return function(){ clearTimeout(t); var a=arguments,c=this; t=setTimeout(function(){ fn.apply(c,a); }, d); }; }
-    var inp = document.getElementById('messagesSearch');
-    if (inp) {
-        inp.addEventListener('input', debounce(function(e){
-            var q = e.target.value.trim();
-            var params = new URLSearchParams(window.location.search);
-            if (q) {
-                params.set('search', q);
-            } else {
-                params.delete('search');
-            }
-            params.delete('page');
-            window.location.search = params.toString();
-        }, 300));
-    }
+    // No automatic reload on pause; user submits search explicitly.
 });
 </script>
 
