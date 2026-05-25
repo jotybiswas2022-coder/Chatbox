@@ -217,6 +217,47 @@
     .table-footer .page-item:first-child .page-link,
     .table-footer .page-item:last-child .page-link {
         min-width: 52px;
+        background: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .table-footer .page-item:first-child .page-link::before {
+        content: "\2039"; /* left arrow */
+        margin-right: 4px;
+    }
+    .table-footer .page-item:last-child .page-link::after {
+        content: "\203A"; /* right arrow */
+        margin-left: 4px;
+    }
+    .table-footer .page-item:first-child .page-link:hover,
+    .table-footer .page-item:last-child .page-link:hover {
+        background: var(--accent-glow);
+        border-color: var(--accent-glow);
+        color: var(--text);
+    }
+
+    .table-footer .page-item:first-child .page-link::before {
+        content: "\2039"; /* left arrow */
+        margin-right: 4px;
+    }
+
+    .table-footer .page-item:last-child .page-link::after {
+        content: "\203A"; /* right arrow */
+        margin-left: 4px;
+    }
+
+    .table-footer .page-item:first-child .page-link:hover,
+    .table-footer .page-item:last-child .page-link:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: var(--text);
     }
 
     /* ── Empty state ── */
