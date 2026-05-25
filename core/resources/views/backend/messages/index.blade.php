@@ -44,7 +44,12 @@
                                 <div>{{ optional($message->recipient)->name ?? '—' }}</div>
                                 <div class="small text-muted">{{ optional($message->recipient)->email ?? '—' }}</div>
                             </td>
-                            <td class="text-truncate" style="max-width:320px;">{{ \Illuminate\Support\Str::limit($message->message ?? '-', 80) }}</td>
+                            <td class="text-truncate" style="max-width:320px;">
+                                @if($message->image_path)
+                                    <img src="{{ route('media.show', ['path' => $message->image_path]) }}" alt="image" class="rounded me-2" style="max-height:60px; width:auto;">
+                                @endif
+                                <span>{{ \Illuminate\Support\Str::limit($message->message ?? '-', 80) }}</span>
+                            </td>
                             <td>{{ optional($message->created_at)->diffForHumans() ?? '—' }}</td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-sm btn-outline-primary btn-view-message" 
@@ -53,6 +58,7 @@
                                     data-recipient="{{ optional($message->recipient)->name }}"
                                     data-email="{{ optional($message->sender)->email }}"
                                     data-message="{{ e($message->message ?? '') }}"
+                                    data-image="{{ $message->image_path ? route('media.show', ['path' => $message->image_path]) : '' }}"
                                     data-created="{{ optional($message->created_at)->toDayDateTimeString() }}"
                                 >
                                     <i class="bi bi-eye"></i> View
@@ -108,7 +114,8 @@
         </dl>
 
         <hr />
-        <div id="m-body" class="small text-break">—</div>
+                <div id="m-image" class="mb-3 text-center"></div>
+                <div id="m-body" class="small text-break">—</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -127,10 +134,17 @@ document.addEventListener('DOMContentLoaded', function () {
             var recipient = this.dataset.recipient || '—';
             var message = this.dataset.message || '';
             var created = this.dataset.created || '—';
+            var imageUrl = this.dataset.image || '';
 
             document.getElementById('m-sender').textContent = sender;
             document.getElementById('m-recipient').textContent = recipient;
             document.getElementById('m-email').textContent = email;
+            var imageContainer = document.getElementById('m-image');
+            if (imageUrl) {
+                imageContainer.innerHTML = '<img src="' + imageUrl + '" class="img-fluid rounded" style="max-height:360px;">';
+            } else {
+                imageContainer.innerHTML = '';
+            }
             document.getElementById('m-body').innerHTML = message.replace(/\n/g, '<br>');
             document.getElementById('m-created').textContent = created;
 
