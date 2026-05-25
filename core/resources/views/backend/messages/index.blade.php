@@ -17,6 +17,9 @@
             <small class="text-muted">Users' personal messages</small>
         </div>
         <div class="card-body">
+            <div class="mb-3">
+                <input id="messagesSearch" class="form-control form-control-sm" type="search" placeholder="Search sender..." aria-label="Search sender">
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover table-striped align-middle">
                     <thead class="table-light">
@@ -136,6 +139,35 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.show();
         });
     });
+
+    // Live search (client-side) - filters rows by sender name as you type
+    function debounce(fn, delay) {
+        var timer;
+        return function () {
+            var context = this, args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function () { fn.apply(context, args); }, delay);
+        };
+    }
+
+    var searchInput = document.getElementById('messagesSearch');
+    if (searchInput) {
+        var onSearch = function (e) {
+            var q = (e.target.value || '').toLowerCase().trim();
+            var rows = document.querySelectorAll('table tbody tr');
+            rows.forEach(function (row) {
+                // sender is cell index 1
+                var sender = (row.cells[1] && row.cells[1].innerText || '').toLowerCase();
+                if (!q || sender.indexOf(q) !== -1) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        };
+
+        searchInput.addEventListener('input', debounce(onSearch, 200));
+    }
 });
 </script>
 
