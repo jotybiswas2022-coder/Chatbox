@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\DashboardController;
 use App\Http\Controllers\admin\AccountController;
 use App\Http\Controllers\admin\ContactController;
-use App\Http\Controllers\admin\DonorController;
+use App\Http\Controllers\admin\MessageController;
 
 Route::prefix('admin')->middleware('admin')->group(function () {
 
@@ -32,14 +32,10 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     });
 
     // ===============================
-    // Donor List CRUD
+    // Messages
     // ===============================
-    Route::prefix('donor_list')->controller(DonorController::class)->group(function () {
-        Route::get('/', 'index')->name('donor.index');
-        Route::get('/create', 'create')->name('donor.create');
-        Route::post('/store', 'store')->name('donor.store');
-        Route::get('/edit/{id}', 'edit')->name('donor.edit');
-        Route::post('/update/{id}', 'update')->name('donor.update');
-        Route::delete('/delete/{id}', 'delete')->name('donor.delete');
+    Route::prefix('messages')->controller(MessageController::class)->group(function () {
+        Route::get('/', 'index')->name('messages.index');
     });
+
 });

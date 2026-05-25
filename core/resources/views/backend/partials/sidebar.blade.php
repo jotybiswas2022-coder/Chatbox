@@ -71,7 +71,13 @@ use Illuminate\Support\Str;
                     <span>Account</span>
                 </a>
             </li>
-
+            <li>
+                <a href="{{ url('/admin/messages') }}"
+                class="{{ request()->is('admin/messages') ? 'active' : '' }}">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Messages</span>
+                </a>
+            </li>
             <li>
                 <a href="{{ url('/admin/contact') }}"
                 class="{{ request()->is('admin/contact') ? 'active' : '' }}">
