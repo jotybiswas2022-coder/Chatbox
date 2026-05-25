@@ -61,9 +61,21 @@
                                     data-image="{{ $message->image_path ? route('media.show', ['path' => $message->image_path]) : '' }}"
                                     data-created="{{ optional($message->created_at)->toDayDateTimeString() }}"
                                 >
-                                    <i class="bi bi-eye"></i> View
+                                    <i class="bi bi-eye"></i>
                                 </button>
-                                <!-- Optional: add delete/edit buttons later -->
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-edit-message ms-1" 
+                                    data-action="{{ route('messages.update', $message->id) }}"
+                                    data-message="{{ e($message->message ?? '') }}"
+                                >
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form method="POST" action="{{ route('messages.destroy', $message->id) }}" class="d-inline-block ms-1" onsubmit="return confirm('Are you sure you want to delete this message?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         @empty
@@ -114,12 +126,38 @@
         </dl>
 
         <hr />
-                <div id="m-image" class="mb-3 text-center"></div>
-                <div id="m-body" class="small text-break">—</div>
+        <div id="m-image" class="mb-3 text-center"></div>
+        <div id="m-body" class="small text-break">—</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Message Modal -->
+<div class="modal fade" id="editMessageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="editMessageForm" method="POST" action="">
+        @csrf
+        @method('PUT')
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editMessageText" class="form-label">Message text</label>
+            <textarea id="editMessageText" name="message" class="form-control" rows="4" maxlength="1000"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -163,6 +201,21 @@ document.addEventListener('DOMContentLoaded', function () {
             timer = setTimeout(function () { fn.apply(context, args); }, delay);
         };
     }
+
+    var editButtons = document.querySelectorAll('.btn-edit-message');
+    editButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var action = this.dataset.action;
+            var messageText = this.dataset.message || '';
+
+            var editForm = document.getElementById('editMessageForm');
+            editForm.action = action;
+            document.getElementById('editMessageText').value = messageText;
+
+            var editModal = new bootstrap.Modal(document.getElementById('editMessageModal'));
+            editModal.show();
+        });
+    });
 
     var searchInput = document.getElementById('messagesSearch');
     if (searchInput) {

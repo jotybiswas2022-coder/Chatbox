@@ -36,6 +36,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     // ===============================
     Route::prefix('messages')->controller(MessageController::class)->group(function () {
         Route::get('/', 'index')->name('messages.index');
+        Route::put('/{message_id}', 'update')->name('messages.update');
+        Route::delete('/{message_id}', 'destroy')->name('messages.destroy');
     });
 
 });
